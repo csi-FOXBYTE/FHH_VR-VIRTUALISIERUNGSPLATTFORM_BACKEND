@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import realtimeExtension from "./extensions/realtimeExtension.js";
+import { versioningExtension } from "./extensions/versioningExtension.js";
 
-const prisma = new PrismaClient();
-
-export default prisma;
+export const prisma = new PrismaClient()
+  .$extends(realtimeExtension({ intervalMs: 5_000 }))
+  .$extends(versioningExtension());

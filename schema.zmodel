@@ -14,22 +14,26 @@ generator client {
 
 /// NEXT-AUTH
 model User {
-  id            String          @id() @default(cuid())
-  name          String?
-  phoneNumber   String?
-  email         String          @unique()
-  emailVerified DateTime?
-  image         String?         @db.Text()
-  accounts      Account[]
-  sessions      Session[]
-  Authenticator Authenticator[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt()
-  role          Role?           @relation(fields: [roleId], references: [id])
-  roleId        String?
+  id             String          @id() @default(cuid())
+  name           String?
+  phoneNumber    String?
+  email          String          @unique()
+  emailVerified  DateTime?
+  image          String?         @db.Text()
+  accounts       Account[]
+  sessions       Session[]
+  Authenticator  Authenticator[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt()
+  role           Role?           @relation(fields: [roleId], references: [id])
+  roleId         String?
 
-  createdTasks  Task[]
-  projects      Project[]
+  createdTasks   Task[]
+  projects       Project[]
+  createdEvents  Event[]
+  attendedEvents EventAttendee[]
+
+  @@auth
 }
 
 model Account {
@@ -113,4 +117,37 @@ model Project {
   description String   @db.Text
   owner       User     @relation(fields: [ownerId], references: [id])
   ownerId     String
+}
+
+model EventAttendee {
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  eventId String
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+
+  @@id([eventId, userId])
+}
+
+model Event {
+  id                 String          @id() @default(cuid())
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt()
+
+  creator            User            @relation(fields: [creatorId], references: [id])
+  creatorId          String
+
+  /// Can be one of MISSING_HOST, ACTIVE, PLANNED, END
+  status             String
+
+  title              String          @db.Text
+  startTime          DateTime
+  endTime            DateTime
+  joinCode           String?
+  heartbeatTimestamp DateTime?
+
+  attendees          EventAttendee[]
+
+  @@allow('create', true)
+  @@allow('read', auth().id == creatorId || attendees?[user == auth()])
+  @@allow('update,delete', auth().id == creatorId)
 }

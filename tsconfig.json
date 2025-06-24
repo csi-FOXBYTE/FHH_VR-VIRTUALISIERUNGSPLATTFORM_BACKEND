@@ -8,9 +8,11 @@
     "moduleResolution": "nodenext",
     "moduleDetection": "force",
     "resolveJsonModule": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
     "noEmit": true,
     "lib": ["es2022"],
-    "incremental": true,
+    "incremental": false,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },

@@ -13,8 +13,6 @@ function createActionURL(
   const basePath = config?.basePath;
   const envUrl = envObject.AUTH_URL ?? envObject.NEXTAUTH_URL;
 
-  console.log({ envUrl, basePath });
-
   let url: URL;
   if (envUrl) {
     url = new URL(envUrl);
@@ -58,19 +56,26 @@ export async function getSession(req: FastifyRequest, config: AuthConfig) {
     config
   );
 
-  console.log({ url });
-
   const response = await Auth(
-    new Request(url, { headers: { cookie: req.headers.cookie ?? "" } }),
+    new Request(url, {
+      headers: {
+        cookie: req.headers.cookie ?? "",
+        authorization: req.headers.authorization ?? "",
+      },
+    }),
     config
   );
 
   const { status = 200 } = response;
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    user: { name: string; email: string; image: string };
+    expires: string;
+  };
 
   if (!data || !Object.keys(data).length) return null;
   if (status === 200) return data;
+  // @ts-expect-error this is completely fine
   throw new Error(data.message);
 }
 
@@ -114,7 +119,7 @@ function fastifyToStandardRequest(fastifyReq: FastifyRequest) {
     method,
     headers,
     // Only include body for HTTP methods that allow a payload:
-    ...(method !== "GET" && method !== "HEAD" ? { } : {}),
+    ...(method !== "GET" && method !== "HEAD" ? {} : {}),
   });
 }
 
@@ -125,7 +130,7 @@ export const registerAuth = async (fastify: FastifyInstance) => {
 
     const session = await getSession(req, authOptions);
 
-    if (!session) return rep.code(401).send("ACCESS DENIED");
+    if (!session) return rep.code(401).send({ message: "ACCESS_DENIED" });
   });
   fastify.route({
     method: ["GET", "POST"],

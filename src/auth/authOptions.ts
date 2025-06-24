@@ -1,6 +1,6 @@
 import MicrosoftEntraId from "@auth/core/providers/microsoft-entra-id";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "../prisma/index.js";
+import { prisma } from "../prisma/index.js";
 import { AuthConfig } from "@auth/core";
 
 export const authOptions: AuthConfig = {
@@ -9,6 +9,9 @@ export const authOptions: AuthConfig = {
       clientSecret: process.env.MICROSOFT_ENTRA_CLIENT_SECRET,
       clientId: process.env.MICROSOFT_ENTRA_CLIENT_ID,
       issuer: process.env.MICROSOFT_ENTRA_ISSUER,
+      authorization: {
+        params: "openid urn:fhhvr/vrvis-prod",
+      },
     }),
   ],
   session: {
