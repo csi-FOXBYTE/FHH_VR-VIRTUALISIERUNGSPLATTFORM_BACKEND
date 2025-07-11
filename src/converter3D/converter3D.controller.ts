@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   OnEvent,
@@ -13,10 +14,15 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import proj4list from "proj4-list";
 import { BlobStorageService } from "../blobStorage/blobStorage.service.js";
 import {
+  downloadProjectModelRequestDTIO,
+  DownloadProjectModelRequestDTIO,
+  GetProjectModelStatusRequestDTO,
+  getProjectModelStatusRequestDTO,
   GetProjectModelStatusResponseDTO,
   getProjectModelStatusResponseDTO,
   upload3DTileRequestDTO,
   uploadProjectModelRequestDTO,
+  UploadProjectModelResponseDTO,
   uploadProjectModelResponseDTO,
   uploadTerrainRequestDTO,
 } from "./converter3D.dto.js";
@@ -49,7 +55,7 @@ export class Converter3DController {
   async uploadProjectModel(
     @Req() request: FastifyRequest,
     @Rep() reply: FastifyReply
-  ) {
+  ): Promise<UploadProjectModelResponseDTO> {
     let fileName = "";
     let epsgCode = "";
 
@@ -77,16 +83,42 @@ export class Converter3DController {
   }
 
   @Schema({
-    querystring: Type.Object({ blobName: Type.String() }),
+    body: getProjectModelStatusRequestDTO,
     response: {
       200: getProjectModelStatusResponseDTO,
     },
   })
-  @Get("/getProjectModelStatus")
+  @Post("/getProjectModelStatus")
   async getProjectModelStatus(
-    @Query("blobName") blobName: string
+    @Body() body: GetProjectModelStatusRequestDTO
   ): Promise<GetProjectModelStatusResponseDTO> {
-    return await this.converter3DService.getProjectModelStatus(blobName);
+    return await this.converter3DService.getProjectModelStatus(
+      body.jobId,
+      body.secret
+    );
+  }
+
+  @Schema({
+    body: downloadProjectModelRequestDTIO,
+    response: {
+      200: Type.String({ format: "binary" }),
+    },
+  })
+  @Post("/downloadProjectModel")
+  async downloadProjectModel(
+    @Body() body: DownloadProjectModelRequestDTIO,
+    @Rep() reply: FastifyReply
+  ) {
+    const stream = await this.converter3DService.downloadProjectModel(
+      body.jobId,
+      body.secret
+    );
+
+    reply
+      .header("content-type", "application/octet-stream")
+      .header("content-disposition", 'attachment; filename="big-file.glb"');
+
+    return stream!;
   }
 
   @OnEvent(
@@ -95,6 +127,12 @@ export class Converter3DController {
       await controller.converter3DService.deleteProjectModelRemnants(
         job.data.blobName
       );
+    }
+  )
+  @OnEvent(
+    "completed",
+    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
+      controller.converter3DService;
     }
   )
   @Worker(

@@ -1,4 +1,3 @@
-import "dotenv";
 import { Document, Logger, NodeIO, vec3 } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import {
@@ -11,6 +10,7 @@ import {
   textureCompress,
   weld,
 } from "@gltf-transform/functions";
+import "dotenv";
 import {
   MeshoptDecoder,
   MeshoptEncoder,
@@ -20,9 +20,9 @@ import sharp from "sharp";
 import { Matrix4 } from "three";
 // @ts-expect-error has no types
 import draco3d from "draco3dgltf";
-import { ConvertProjectModelJob } from "../jobs/convertProjectModel.job.js";
-import { BlobStorageService } from "../../blobStorage/blobStorage.service.js";
+import { getBlockBlobClient } from "../../lib/BlockBlobClient.js";
 import { injectPinoLogger } from "../../lib/pino.js";
+import { ConvertProjectModelJob } from "../jobs/convertProjectModel.job.js";
 
 injectPinoLogger();
 
@@ -32,23 +32,20 @@ export default async function run(
   job: ConvertProjectModelJob
 ): Promise<ConvertProjectModelJob["returnValue"]> {
   console.log("Converting Project Model...");
+
+  const fileBlockBlobClient = await getBlockBlobClient(
+    job.data.containerName,
+    job.data.blobName
+  );
+
   try {
     await job.updateProgress(0);
 
-    const {
-      data: { blobName, fileName, srcSRS, containerName },
-    } = job;
-
-    const blobStorageService = new BlobStorageService();
-
-    const file = await blobStorageService.downloadToBuffer(
-      containerName,
-      blobName
-    );
+    const file = await fileBlockBlobClient.downloadToBuffer();
 
     await job.updateProgress(0.25);
 
-    const extension = fileName.split(".").slice(-1)[0];
+    const extension = job.data.fileName.split(".").slice(-1)[0];
 
     const io = new NodeIO()
       .registerExtensions([...ALL_EXTENSIONS])
@@ -134,20 +131,20 @@ export default async function run(
     );
 
     // overwrite blob
-    await blobStorageService.uploadData(
-      Buffer.from(await io.writeBinary(document)),
-      containerName,
-      blobName
+    await fileBlockBlobClient.uploadData(
+      Buffer.from(await io.writeBinary(document))
     );
 
     await job.updateProgress(1);
 
     return {
-      collectableBlobName: blobName,
+      collectableBlobName: job.data.blobName,
       modelMatrix: modelMatrix.toArray(),
+      secret: job.data.secret,
     };
   } catch (e) {
     console.error(e);
+    await fileBlockBlobClient.delete();
     throw e;
   }
 }

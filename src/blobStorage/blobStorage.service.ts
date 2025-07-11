@@ -2,14 +2,24 @@ import {
   BlobServiceClient,
   BlockBlobUploadStreamOptions,
 } from "@azure/storage-blob";
-import { Service } from "@tganzhorn/fastify-modular";
+import { ContextService, Service } from "@tganzhorn/fastify-modular";
+import { Queue } from "bullmq";
 import { Readable } from "node:stream";
+import {
+  DeleteBlobJob,
+  DeleteBlobJobQueueName,
+} from "./jobs/deleteBlob.job.js";
 
-@Service([])
+@Service([ContextService])
 export class BlobStorageService {
   private readonly _blobServiceClient: BlobServiceClient;
 
-  constructor() {
+  readonly deleteBlobQueue: Queue<
+    DeleteBlobJob["data"],
+    DeleteBlobJob["returnvalue"]
+  >;
+
+  constructor(private contextService: ContextService) {
     const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
     if (!connectionString) {
@@ -20,6 +30,10 @@ export class BlobStorageService {
       connectionString,
       {}
     );
+
+    this.deleteBlobQueue = this.contextService.ctx.queues.get(
+      DeleteBlobJobQueueName
+    ) as Queue<DeleteBlobJob["data"], DeleteBlobJob["returnvalue"]>;
   }
 
   private async _getClient(containerName: string, blobName: string) {
@@ -103,5 +117,18 @@ export class BlobStorageService {
     const client = await this._getClient(containerName, blobName);
 
     return await client.delete();
+  }
+
+  async deleteLater(containerName: string, blobName: string, delayMs: number) {
+    await this.deleteBlobQueue.add(
+      `${containerName}/${blobName}`,
+      {
+        blobName,
+        containerName,
+      },
+      {
+        delay: delayMs,
+      }
+    );
   }
 }

@@ -31,7 +31,7 @@
     "@fastify/swagger-ui": "^5.2.3",
     "@fastify/under-pressure": "^9.0.3",
     "@prisma/client": "6.8.2",
-    "@tganzhorn/fastify-modular": "^0.1.11",
+    "@tganzhorn/fastify-modular": "^0.1.16",
     "@types/lodash": "^4.17.20",
     "@types/lodash.debounce": "^4.0.9",
     "bullmq": "^5.56.1",

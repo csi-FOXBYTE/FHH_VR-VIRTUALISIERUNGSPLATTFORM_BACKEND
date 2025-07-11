@@ -1,39 +1,38 @@
 import "dotenv";
 
 import { generate, preprocess } from "@csi-foxbyte/mesh-dem-to-terrain";
+import { JobProgress } from "bullmq";
+import _ from "lodash";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { BlobStorageService } from "../../blobStorage/blobStorage.service.js";
-import { ConvertTerrainJob } from "../jobs/convertTerrain.job.js";
-import _ from "lodash";
-import { JobProgress } from "bullmq";
+import { getBlockBlobClient } from "../../lib/BlockBlobClient.js";
 import { injectPinoLogger } from "../../lib/pino.js";
+import { ConvertTerrainJob } from "../jobs/convertTerrain.job.js";
 
 injectPinoLogger();
 
 export default async function run(
   job: ConvertTerrainJob
 ): Promise<ConvertTerrainJob["returnValue"]> {
-  console.log("Converting Terrain...")
+  console.log("Converting Terrain...");
+
+  const zipBlockBlobClient = await getBlockBlobClient(
+    job.data.containerName,
+    job.data.blobName
+  );
+
+  const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
+
   try {
     const throttledProgress = _.throttle(async (progress: JobProgress) => {
       await job.updateProgress(progress);
-      console.log({ progress });
     }, 1_000);
-
-    const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
-
-    const blobStorageService = new BlobStorageService();
 
     const zipPath = path.join(rootPath, job.data.blobName);
 
     await mkdir(rootPath, { recursive: true });
 
-    await blobStorageService.downloadToFile(
-      job.data.containerName,
-      job.data.blobName,
-      zipPath
-    );
+    await zipBlockBlobClient.downloadToFile(zipPath);
 
     const preprocessedDir = path.join(rootPath, "preprocessed");
 
@@ -52,32 +51,39 @@ export default async function run(
       {
         writeFile: async (_, file, terrainTile) => {
           if (terrainTile) {
-            await blobStorageService.uploadData(
-              Buffer.from(file),
-              "terrains",
-              `${job.data.blobName}/${terrainTile.zoom}/${terrainTile.x}/${terrainTile.y}.terrain`
+            console.log({
+              path: `${terrainTile.zoom}/${terrainTile.x}/${terrainTile.y}.terrain`,
+              terrainTile,
+            });
+            const fileBlockBlobClient = await getBlockBlobClient(
+              `terrain-${job.data.blobName}`,
+              `${terrainTile.zoom}/${terrainTile.x}/${terrainTile.y}.terrain`
             );
+
+            await fileBlockBlobClient.uploadData(Buffer.from(file));
             return;
           }
 
-          await blobStorageService.uploadData(
-            Buffer.from(file),
-            "terrain",
-            "layer.json"
+          const fileBlockBlobClient = await getBlockBlobClient(
+            `terrain-${job.data.blobName}`,
+            `layer.json`
           );
+
+          await fileBlockBlobClient.uploadData(Buffer.from(file));
         },
       }
     );
 
     try {
-      await blobStorageService.delete(
-        job.data.containerName,
-        job.data.blobName
-      );
+      await zipBlockBlobClient.delete();
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
   } catch (e) {
     console.error(e);
+    try {
+      await zipBlockBlobClient.delete();
+      await rm(rootPath, { force: true, recursive: true });
+    } catch {}
     throw e;
   }
 }

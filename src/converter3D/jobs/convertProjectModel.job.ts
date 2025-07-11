@@ -8,9 +8,11 @@ export type ConvertProjectModelJob = SandboxedJob<
     fileName: string;
     containerName: string;
     srcSRS: string;
+    secret: string;
   },
   {
     modelMatrix: number[];
     collectableBlobName: string;
+    secret: string;
   }
 >;

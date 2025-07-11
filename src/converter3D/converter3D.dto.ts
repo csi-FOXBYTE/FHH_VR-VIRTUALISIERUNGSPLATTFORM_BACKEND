@@ -24,10 +24,19 @@ export type UploadProjectModelRequestDTO = Static<
 >;
 
 export const uploadProjectModelResponseDTO = Type.Object({
-  blobName: Type.String(),
+  jobId: Type.String(),
+  secret: Type.String(),
 });
 export type UploadProjectModelResponseDTO = Static<
   typeof uploadProjectModelResponseDTO
+>;
+
+export const getProjectModelStatusRequestDTO = Type.Object({
+  jobId: Type.String(),
+  secret: Type.String(),
+});
+export type GetProjectModelStatusRequestDTO = Static<
+  typeof getProjectModelStatusRequestDTO
 >;
 
 export const getProjectModelStatusResponseDTO = Type.Object({
@@ -41,10 +50,16 @@ export const getProjectModelStatusResponseDTO = Type.Object({
     Type.Literal("unknown"),
   ]),
   progress: Type.Number(),
-  buffer64: Type.Optional(Type.String()),
   modelMatrix: Type.Optional(Type.Array(Type.Number())),
 });
-
 export type GetProjectModelStatusResponseDTO = Static<
   typeof getProjectModelStatusResponseDTO
+>;
+
+export const downloadProjectModelRequestDTIO = Type.Object({
+  jobId: Type.String(),
+  secret: Type.String(),
+});
+export type DownloadProjectModelRequestDTIO = Static<
+  typeof downloadProjectModelRequestDTIO
 >;

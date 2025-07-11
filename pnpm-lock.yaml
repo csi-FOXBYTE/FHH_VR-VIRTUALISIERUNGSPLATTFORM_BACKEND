@@ -57,8 +57,8 @@ importers:
         specifier: 6.8.2
         version: 6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3)
       '@tganzhorn/fastify-modular':
-        specifier: ^0.1.11
-        version: 0.1.11
+        specifier: ^0.1.16
+        version: 0.1.16
       '@types/lodash':
         specifier: ^4.17.20
         version: 4.17.20
@@ -1261,8 +1261,8 @@ packages:
     resolution: {integrity: sha512-pj0cAALblTZBPtMltWOlZTQSLT07jIaFNeM8TWoJD1cQMgDB9mcMlVMoetiB35OzNJpqQ2b+QEtwiR9f20mADg==}
     engines: {node: '>=8'}
 
-  '@tganzhorn/fastify-modular@0.1.11':
-    resolution: {integrity: sha512-nN3EfWpkwkbkgwbM0qyzc/FREhplY56Rh5TGEEuu/Othz9j/Timz7R8xbmKQmeqzdS2jhyrPVwp1WQt58roBrQ==}
+  '@tganzhorn/fastify-modular@0.1.16':
+    resolution: {integrity: sha512-GuQqSARJLQWWFzrgdWnW5nQncQaFHyuwoHgtMFaElI3a2kDQBsOQdjvJOZMX0S9syKRk2RjBW/87W0nNgjM6xQ==}
     hasBin: true
 
   '@tootallnate/once@1.1.2':
@@ -5117,7 +5117,7 @@ snapshots:
 
   '@supercharge/promise-pool@3.2.0': {}
 
-  '@tganzhorn/fastify-modular@0.1.11':
+  '@tganzhorn/fastify-modular@0.1.16':
     dependencies:
       '@sinclair/typebox': 0.34.37
       bullmq: 5.56.1

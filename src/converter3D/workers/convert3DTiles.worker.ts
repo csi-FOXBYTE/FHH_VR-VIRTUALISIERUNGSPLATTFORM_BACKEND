@@ -3,17 +3,17 @@ import {
   generate3DTilesFromTileDatabase,
   generateTileDatabaseFromCityJSON,
 } from "@csi-foxbyte/cityjson-to-3d-tiles";
+import { JobProgress } from "bullmq";
 import "dotenv";
 import { createReadStream } from "fs";
 import { mkdir, rm } from "fs/promises";
+import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
-import { BlobStorageService } from "../../blobStorage/blobStorage.service.js";
+import { getBlockBlobClient } from "../../lib/BlockBlobClient.js";
 import { cityGMLToCityJSON } from "../../lib/CityGMLTools.js";
-import { Convert3DTilesJob } from "../jobs/convert3DTiles.job.js";
-import _ from "lodash";
-import { JobProgress } from "bullmq";
 import { injectPinoLogger } from "../../lib/pino.js";
+import { Convert3DTilesJob } from "../jobs/convert3DTiles.job.js";
 
 injectPinoLogger();
 
@@ -28,9 +28,12 @@ export default async function run(
     console.log({ progress });
   }, 1_000);
 
-  try {
-    const blobStorageService = new BlobStorageService();
+  const zipBlockBlobClient = await getBlockBlobClient(
+    job.data.containerName,
+    job.data.blobName
+  );
 
+  try {
     const zipPath = path.join(rootPath, job.data.blobName + ".zip");
 
     try {
@@ -39,11 +42,7 @@ export default async function run(
 
     await mkdir(rootPath, { recursive: true });
 
-    await blobStorageService.downloadToFile(
-      job.data.containerName,
-      job.data.blobName,
-      zipPath
-    );
+    await zipBlockBlobClient.downloadToFile(zipPath);
 
     await throttledProgress(0.05);
 
@@ -92,11 +91,12 @@ export default async function run(
     for (const file of files) {
       const readStream = createReadStream(path.join(tilesPath, file));
 
-      await blobStorageService.uploadStream(
-        readStream,
-        "tilesets",
-        `${job.data.blobName}/${file}`
+      const blockBlobClient = await getBlockBlobClient(
+        `tileset-${job.data.blobName}`,
+        `${file}`
       );
+
+      await blockBlobClient.uploadStream(readStream);
 
       uploadedFiles++;
 
@@ -105,11 +105,13 @@ export default async function run(
 
     // cleanup
     try {
+      await zipBlockBlobClient.delete();
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
   } catch (e) {
     console.error(e);
     try {
+      await zipBlockBlobClient.delete();
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
     throw e;

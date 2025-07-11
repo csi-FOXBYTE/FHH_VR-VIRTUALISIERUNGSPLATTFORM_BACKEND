@@ -5,22 +5,20 @@ import { ChildProcess, spawn } from "node:child_process";
 let serverProcess: ChildProcess | null = null;
 
 // Launch (or relaunch) the built server
-function startServer() {
+async function startServer() {
   // if there’s already a running server, kill it
   if (serverProcess) {
+    const serverHandle = new Promise((resolve) => {
+      serverProcess!.on("exit", resolve);
+    });
+
     serverProcess.kill();
+
+    await serverHandle;
   }
 
   // spawn a new one
   serverProcess = spawn("node", ["build/index.js"], { stdio: "inherit" });
-
-  serverProcess.on("exit", (code, signal) => {
-    if (signal) {
-      console.log(`Server was killed by signal: ${signal}`);
-    } else {
-      console.log(`Server exited with code: ${code}`);
-    }
-  });
 }
 
 (async function () {
@@ -28,7 +26,7 @@ function startServer() {
   await startBuild();
 
   // 2) Start server after initial build
-  startServer();
+  await startServer();
 
   // 3) Watch your source tree
   const watcher = chokidar.watch("src", {
@@ -43,17 +41,17 @@ function startServer() {
   // Debounce rapid file changes into one rebuild + restart
   let rebuildTimeout: ReturnType<typeof setTimeout> | null = null;
   watcher.on("all", (event, path) => {
-    console.log(`File ${path} changed (${event}), scheduling rebuild…`);
+    console.log(`${path} changed (${event}), scheduling rebuild...`);
     if (rebuildTimeout) clearTimeout(rebuildTimeout);
     rebuildTimeout = setTimeout(async () => {
-      console.log("Rebuilding…");
+      console.log("Rebuilding...");
       try {
         await startBuild();
-        console.log("Build succeeded, restarting server…");
-        startServer();
+        console.log("Build succeeded, restarting server...");
+        await startServer();
       } catch (err) {
         console.error("Build failed:", err);
       }
-    }, 250);
+    }, 1000);
   });
 })();

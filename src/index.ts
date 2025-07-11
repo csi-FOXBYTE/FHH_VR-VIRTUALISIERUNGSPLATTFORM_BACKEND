@@ -15,6 +15,7 @@ import { EventsController } from "./events/events.controller.js";
 import { StatsController } from "./stats/stats.controller.js";
 import { createCache } from "cache-manager";
 import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
+import { BlobStorageController } from "./blobStorage/blobStorage.controller.js";
 
 injectPinoLogger();
 
@@ -80,7 +81,7 @@ fastify.register(fastifySwaggerUi, {
 
 const cache = createCache();
 
-registerControllers(fastify, { cache, controllers: [EventsController, Converter3DController, StatsController], bullMqConnection: {
+registerControllers(fastify, { cache, controllers: [EventsController, Converter3DController, StatsController, BlobStorageController], bullMqConnection: {
   host: "localhost",
   port: 6379,
 },});
