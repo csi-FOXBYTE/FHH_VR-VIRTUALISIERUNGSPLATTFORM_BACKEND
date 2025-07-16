@@ -1,267 +1,252 @@
+import {
+  createService,
+  InferService,
+  ServiceContainer,
+} from "@csi-foxbyte/fastify-toab";
+import { getConvert3DTilesWorkerQueue } from "./workers/convert3DTiles.worker.js";
+import { getConvertProjectModelWorkerQueue } from "./workers/convertProjectModel.worker.js";
+import { getConvertTerrainWorkerQueue } from "./workers/convertTerrain.worker.js";
+import { getBlobStorageService } from "../blobStorage/blobStorage.service.js";
+import { Readable } from "stream";
 import { BlockBlobUploadStreamOptions } from "@azure/storage-blob";
-import { ContextService, Service } from "@tganzhorn/fastify-modular";
-import { Queue } from "bullmq";
-import { Readable } from "node:stream";
-import { AuthService } from "../auth/auth.service.js";
-import { BlobStorageService } from "../blobStorage/blobStorage.service.js";
-import { ConfigurationService } from "../configuration/configuration.service.js";
-import { DbService } from "../db/db.service.js";
-import {
-  Convert3DTilesJob,
-  Convert3DTilesQueueName,
-} from "./jobs/convert3DTiles.job.js";
-import {
-  ConvertProjectModelJob,
-  ConvertProjectModelQueueName,
-} from "./jobs/convertProjectModel.job.js";
-import {
-  ConvertTerrainJob,
-  ConvertTerrainQueueName,
-} from "./jobs/convertTerrain.job.js";
+import { getConfigurationService } from "../configuration/configuration.service.js";
+import { getDbService } from "../db/db.service.js";
+import { getAuthService } from "../auth/auth.service.js";
 
-@Service([
-  BlobStorageService,
-  DbService,
-  AuthService,
-  ConfigurationService,
-  ContextService,
-])
-export class Converter3DService {
-  readonly tile3DConverterQueue: Queue<
-    Convert3DTilesJob["data"],
-    Convert3DTilesJob["returnValue"]
-  >;
-  readonly projectModelConverterQueue: Queue<
-    ConvertProjectModelJob["data"],
-    ConvertProjectModelJob["returnValue"]
-  >;
-  readonly terrainConverterQueue: Queue<
-    ConvertTerrainJob["data"],
-    ConvertTerrainJob["returnValue"]
-  >;
+const converter3DService = createService(
+  "converter3D",
+  async ({ queues, services }) => {
+    console.log({ queues, services });
+    const tile3DConverterQueue = getConvert3DTilesWorkerQueue(queues);
+    const projectModelConverterQueue =
+      getConvertProjectModelWorkerQueue(queues);
+    const terrainConverterQueue = getConvertTerrainWorkerQueue(queues);
+    const dbService = await getDbService(services);
+    const blobStorageService = await getBlobStorageService(services);
+    const configurationService = await getConfigurationService(services);
 
-  constructor(
-    private blobStorageService: BlobStorageService,
-    private dbService: DbService,
-    private authService: AuthService,
-    private configurationService: ConfigurationService,
-    private contextService: ContextService
-  ) {
-    this.tile3DConverterQueue = this.contextService.ctx.queues.get(
-      Convert3DTilesQueueName
-    ) as Queue<Convert3DTilesJob["data"], Convert3DTilesJob["returnValue"]>;
+    const projectModelUploadContainerName = "converter-project-model-upload";
 
-    this.projectModelConverterQueue = this.contextService.ctx.queues.get(
-      ConvertProjectModelQueueName
-    ) as Queue<
-      ConvertProjectModelJob["data"],
-      ConvertProjectModelJob["returnValue"]
-    >;
-    this.terrainConverterQueue = this.contextService.ctx.queues.get(
-      ConvertTerrainQueueName
-    ) as Queue<ConvertTerrainJob["data"], ConvertTerrainJob["returnValue"]>;
-  }
+    const projectModel = {
+      async uploadProjectModel(
+        file: Readable,
+        fileName: string,
+        srcSRS: string
+      ) {
+        const { blobName } = await blobStorageService.uploadStream(
+          file,
+          projectModelUploadContainerName
+        );
 
-  // #region project model
-  private readonly projectModelUploadContainerName =
-    "converter-project-model-upload";
+        const job = await projectModelConverterQueue.add(blobName, {
+          blobName,
+          fileName,
+          srcSRS,
+          containerName: projectModelUploadContainerName,
+          secret: crypto.randomUUID(),
+        });
 
-  async uploadProjectModel(file: Readable, fileName: string, srcSRS: string) {
-    const { blobName } = await this.blobStorageService.uploadStream(
-      file,
-      this.projectModelUploadContainerName
-    );
+        await blobStorageService.deleteLater(
+          projectModelUploadContainerName,
+          blobName,
+          24 * 60 * 60 * 1000
+        );
 
-    const job = await this.projectModelConverterQueue.add(blobName, {
-      blobName,
-      fileName,
-      srcSRS,
-      containerName: this.projectModelUploadContainerName,
-      secret: crypto.randomUUID(),
-    });
-
-    await this.blobStorageService.deleteLater(
-      this.projectModelUploadContainerName,
-      blobName,
-      24 * 60 * 60 * 1000
-    );
-
-    return { jobId: job.id!, secret: job.data.secret };
-  }
-
-  async deleteProjectModelRemnants(blobName: string) {
-    try {
-      await this.blobStorageService.delete(
-        this.projectModelUploadContainerName,
-        blobName
-      );
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async getProjectModelStatus(jobId: string, secret: string) {
-    const job = await this.projectModelConverterQueue.getJob(jobId);
-
-    if (!job || job.data.secret !== secret)
-      throw new Error(`There is no job with id ${jobId}!`);
-
-    const state = await job.getState();
-
-    if (state === "failed") throw new Error("Failed");
-
-    if (state === "completed") {
-      const { modelMatrix } = job.returnvalue;
-
-      return {
-        state,
-        progress: Number(job.progress),
-        modelMatrix,
-      };
-    }
-
-    return { state, progress: Number(job.progress) };
-  }
-
-  async downloadProjectModel(jobId: string, secret: string) {
-    const job = await this.projectModelConverterQueue.getJob(jobId);
-
-    if (!job || job.data.secret !== secret)
-      throw new Error(`There is no job with id ${jobId}!`);
-
-    const { collectableBlobName } = job.returnvalue;
-
-    return await this.blobStorageService.downloadToBuffer(
-      this.projectModelUploadContainerName,
-      collectableBlobName
-    );
-  }
-
-  // #endregion
-
-  // #region terrain
-  private readonly terrainUploadContainerName = "converter-terrain-upload";
-
-  async uploadTerrain(
-    stream: Readable,
-    name: string,
-    srcSRS: string,
-    onProgress?: BlockBlobUploadStreamOptions["onProgress"]
-  ) {
-    const { id } = await this.dbService.subscriberClient.baseLayer.create({
-      data: {
-        name: name,
-        sizeGB: 0,
-        type: "TERRAIN",
-        status: "PENDING",
-        progress: 0,
-        ownerId: (await this.authService.getSession())!.user.id,
+        return { jobId: job.id!, secret: job.data.secret };
       },
-      select: {
-        id: true,
+
+      async deleteProjectModelRemnants(blobName: string) {
+        try {
+          await blobStorageService.delete(
+            projectModelUploadContainerName,
+            blobName
+          );
+        } catch (e) {
+          console.error(e);
+        }
       },
-    });
 
-    await this.blobStorageService.uploadStream(
-      stream,
-      this.terrainUploadContainerName,
-      id,
-      onProgress
-    );
+      async getProjectModelStatus(jobId: string, secret: string) {
+        const job = await projectModelConverterQueue.getJob(jobId);
 
-    const job = await this.terrainConverterQueue.add(id, {
-      blobName: id,
-      srcSRS,
-      containerName: this.terrainUploadContainerName,
-      localProcessorFolder: (
-        await this.configurationService.getConfiguration()
-      ).localProcessorFolder,
-    });
+        if (!job || job.data.secret !== secret)
+          throw new Error(`There is no job with id ${jobId}!`);
 
-    return { jobId: job.id! };
-  }
+        const state = await job.getState();
 
-  async getTerrainStatus(jobId: string) {
-    const job = await this.terrainConverterQueue.getJob(jobId);
+        if (state === "failed") throw new Error("Failed");
 
-    if (!job) throw new Error(`There is no job with id ${jobId}!`);
+        if (state === "completed") {
+          const { modelMatrix } = job.returnvalue;
 
-    const state = await job.getState();
+          return {
+            state,
+            progress: Number(job.progress),
+            modelMatrix,
+          };
+        }
 
-    if (state === "failed") throw new Error("Failed");
-
-    return { state, progress: job.progress };
-  }
-  // #endregion
-
-  //#region 3d tile
-  private readonly tile3DUploadContainerName = "converter-tile-3d-upload";
-
-  async upload3DTile(
-    stream: Readable,
-    name: string,
-    srcSRS: string,
-    onProgress?: BlockBlobUploadStreamOptions["onProgress"]
-  ) {
-    const { id } = await this.dbService.subscriberClient.baseLayer.create({
-      data: {
-        name: name,
-        sizeGB: 0,
-        type: "3D-TILES",
-        status: "PENDING",
-        progress: 0,
-        ownerId: (await this.authService.getSession())!.user.id,
+        return { state, progress: Number(job.progress) };
       },
-      select: {
-        id: true,
+
+      async downloadProjectModel(jobId: string, secret: string) {
+        const job = await projectModelConverterQueue.getJob(jobId);
+
+        if (!job || job.data.secret !== secret)
+          throw new Error(`There is no job with id ${jobId}!`);
+
+        const { collectableBlobName } = job.returnvalue;
+
+        return await blobStorageService.downloadToBuffer(
+          projectModelUploadContainerName,
+          collectableBlobName
+        );
       },
-    });
+    };
 
-    await this.blobStorageService.uploadStream(
-      stream,
-      this.tile3DUploadContainerName,
-      id,
-      onProgress
-    );
+    const terrainUploadContainerName = "converter-terrain-upload";
 
-    const job = await this.tile3DConverterQueue.add(id, {
-      blobName: id,
-      srcSRS,
-      containerName: this.tile3DUploadContainerName,
-      localProcessorFolder: (
-        await this.configurationService.getConfiguration()
-      ).localProcessorFolder,
-    });
+    const terrain = {
+      async uploadTerrain(
+        stream: Readable,
+        name: string,
+        srcSRS: string,
+        onProgress?: BlockBlobUploadStreamOptions["onProgress"]
+      ) {
+        const authService = await getAuthService(services);
 
-    return { jobId: job.id! };
-  }
+        const { id } = await dbService.rawClient.baseLayer.create({
+          data: {
+            name: name,
+            sizeGB: 0,
+            type: "TERRAIN",
+            status: "PENDING",
+            progress: 0,
+            ownerId: (await authService.getSession())!.user.id,
+          },
+          select: {
+            id: true,
+          },
+        });
 
-  async get3DTileStatus(jobId: string) {
-    const job = await this.tile3DConverterQueue.getJob(jobId);
+        await blobStorageService.uploadStream(
+          stream,
+          terrainUploadContainerName,
+          id,
+          onProgress
+        );
 
-    if (!job) throw new Error(`There is no job with id ${jobId}!`);
+        const job = await terrainConverterQueue.add(id, {
+          blobName: id,
+          srcSRS,
+          containerName: terrainUploadContainerName,
+          localProcessorFolder: (
+            await configurationService.getConfiguration()
+          ).localProcessorFolder,
+        });
 
-    const state = await job.getState();
-
-    if (state === "failed") throw new Error("Failed");
-
-    return { state, progress: job.progress };
-  }
-  // #endregion
-
-  async updateBaseLayerStatus(
-    id: string,
-    progress: number,
-    status: "PENDING" | "ACTIVE" | "FAILED" | "COMPLETED"
-  ) {
-    return await this.dbService.subscriberClient.baseLayer.update({
-      where: {
-        id,
+        return { jobId: job.id! };
       },
-      data: {
-        progress,
-        status,
+
+      async getTerrainStatus(jobId: string) {
+        const job = await terrainConverterQueue.getJob(jobId);
+
+        if (!job) throw new Error(`There is no job with id ${jobId}!`);
+
+        const state = await job.getState();
+
+        if (state === "failed") throw new Error("Failed");
+
+        return { state, progress: job.progress };
       },
-    });
+    };
+
+    const tile3DUploadContainerName = "converter-tile-3d-upload";
+
+    const tile3D = {
+      async upload3DTile(
+        stream: Readable,
+        name: string,
+        srcSRS: string,
+        onProgress?: BlockBlobUploadStreamOptions["onProgress"]
+      ) {
+        const authService = await getAuthService(services);
+
+        const { id } = await dbService.rawClient.baseLayer.create({
+          data: {
+            name: name,
+            sizeGB: 0,
+            type: "3D-TILES",
+            status: "PENDING",
+            progress: 0,
+            ownerId: (await authService.getSession())!.user.id,
+          },
+          select: {
+            id: true,
+          },
+        });
+
+        await blobStorageService.uploadStream(
+          stream,
+          tile3DUploadContainerName,
+          id,
+          onProgress
+        );
+
+        const job = await tile3DConverterQueue.add(id, {
+          blobName: id,
+          srcSRS,
+          containerName: tile3DUploadContainerName,
+          localProcessorFolder: (
+            await configurationService.getConfiguration()
+          ).localProcessorFolder,
+        });
+
+        return { jobId: job.id! };
+      },
+
+      async get3DTileStatus(jobId: string) {
+        const job = await tile3DConverterQueue.getJob(jobId);
+
+        if (!job) throw new Error(`There is no job with id ${jobId}!`);
+
+        const state = await job.getState();
+
+        if (state === "failed") throw new Error("Failed");
+
+        return { state, progress: job.progress };
+      },
+    };
+
+    return {
+      ...projectModel,
+      ...terrain,
+      ...tile3D,
+      async updateBaseLayerStatus(
+        id: string,
+        progress: number,
+        status: "PENDING" | "ACTIVE" | "FAILED" | "COMPLETED"
+      ) {
+        return await dbService.rawClient.baseLayer.update({
+          where: {
+            id,
+          },
+          data: {
+            progress,
+            status,
+          },
+        });
+      },
+    };
   }
+);
+
+/*
+AUTOGENERATED!
+*/
+
+export { converter3DService };
+export type Converter3DService = InferService<typeof converter3DService>;
+export function getConverter3DService(deps: ServiceContainer) {
+  return deps.get<Converter3DService>(converter3DService.name);
 }

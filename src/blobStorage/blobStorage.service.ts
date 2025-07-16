@@ -2,52 +2,38 @@ import {
   BlobServiceClient,
   BlockBlobUploadStreamOptions,
 } from "@azure/storage-blob";
-import { ContextService, Service } from "@tganzhorn/fastify-modular";
-import { Queue } from "bullmq";
-import { Readable } from "node:stream";
 import {
-  DeleteBlobJob,
-  DeleteBlobJobQueueName,
-} from "./jobs/deleteBlob.job.js";
+  createService,
+  InferService,
+  ServiceContainer,
+} from "@csi-foxbyte/fastify-toab";
+import { Readable } from "stream";
+import { getDeleteBlobWorkerQueue } from "./workers/deleteBlob.worker.js";
 
-@Service([ContextService])
-export class BlobStorageService {
-  private readonly _blobServiceClient: BlobServiceClient;
+const blobStorageService = createService("blobStorage", async ({ queues }) => {
+  const deleteBlobQueue = getDeleteBlobWorkerQueue(queues);
 
-  readonly deleteBlobQueue: Queue<
-    DeleteBlobJob["data"],
-    DeleteBlobJob["returnvalue"]
-  >;
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
-  constructor(private contextService: ContextService) {
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-
-    if (!connectionString) {
-      throw Error("Please set AZURE_STORAGE_CONNECTION_STRING in your .env");
-    }
-
-    this._blobServiceClient = BlobServiceClient.fromConnectionString(
-      connectionString,
-      {}
-    );
-
-    this.deleteBlobQueue = this.contextService.ctx.queues.get(
-      DeleteBlobJobQueueName
-    ) as Queue<DeleteBlobJob["data"], DeleteBlobJob["returnvalue"]>;
+  if (!connectionString) {
+    throw Error("Please set AZURE_STORAGE_CONNECTION_STRING in your .env");
   }
 
-  private async _getClient(containerName: string, blobName: string) {
-    const containerClient =
-      this._blobServiceClient.getContainerClient(containerName);
+  const blobServiceClient = BlobServiceClient.fromConnectionString(
+    connectionString,
+    {}
+  );
+
+  async function _getClient(containerName: string, blobName: string) {
+    const containerClient = blobServiceClient.getContainerClient(containerName);
 
     await containerClient.createIfNotExists();
 
     return containerClient.getBlockBlobClient(blobName);
   }
 
-  private async _createBlobName(containerName: string) {
-    const containerClient =
-      this._blobServiceClient.getContainerClient(containerName);
+  async function _createBlobName(containerName: string) {
+    const containerClient = blobServiceClient.getContainerClient(containerName);
 
     for (let i = 0; i < 512; i++) {
       const blobName = crypto.randomUUID();
@@ -59,76 +45,89 @@ export class BlobStorageService {
     throw new Error("Could not find a free blob name!");
   }
 
-  async uploadData(
-    data: Buffer | Blob,
-    containerName: string,
-    blobName?: string
-  ) {
-    if (!blobName) blobName = await this._createBlobName(containerName);
+  return {
+    async uploadData(
+      data: Buffer | Blob,
+      containerName: string,
+      blobName?: string
+    ) {
+      if (!blobName) blobName = await _createBlobName(containerName);
 
-    const client = await this._getClient(containerName, blobName);
+      const client = await _getClient(containerName, blobName);
 
-    const response = await client.uploadData(data);
+      const response = await client.uploadData(data);
 
-    return { blobName, ...response };
-  }
+      return { blobName, ...response };
+    },
 
-  async uploadStream(
-    data: Readable,
-    containerName: string,
-    blobName?: string,
-    onProgress?: BlockBlobUploadStreamOptions["onProgress"]
-  ) {
-    if (!blobName) blobName = await this._createBlobName(containerName);
+    async uploadStream(
+      data: Readable,
+      containerName: string,
+      blobName?: string,
+      onProgress?: BlockBlobUploadStreamOptions["onProgress"]
+    ) {
+      if (!blobName) blobName = await _createBlobName(containerName);
 
-    const client = await this._getClient(containerName, blobName);
+      const client = await _getClient(containerName, blobName);
 
-    const response = await client.uploadStream(data, 4 * 1024 * 1024, 1, {
-      onProgress,
-    });
+      const response = await client.uploadStream(data, 4 * 1024 * 1024, 1, {
+        onProgress,
+      });
 
-    return { blobName, ...response };
-  }
+      return { blobName, ...response };
+    },
 
-  async downloadToBuffer(containerName: string, blobName: string) {
-    console.log({ containerName, blobName });
-    const client = await this._getClient(containerName, blobName);
+    async downloadToBuffer(containerName: string, blobName: string) {
+      console.log({ containerName, blobName });
+      const client = await _getClient(containerName, blobName);
 
-    return await client.downloadToBuffer();
-  }
+      return await client.downloadToBuffer();
+    },
 
-  async downloadToStream(containerName: string, blobName: string) {
-    const client = await this._getClient(containerName, blobName);
+    async downloadToStream(containerName: string, blobName: string) {
+      const client = await _getClient(containerName, blobName);
 
-    return await client.download();
-  }
+      return await client.download();
+    },
 
-  async downloadToFile(
-    containerName: string,
-    blobName: string,
-    filePath: string
-  ) {
-    const client = await this._getClient(containerName, blobName);
+    async downloadToFile(
+      containerName: string,
+      blobName: string,
+      filePath: string
+    ) {
+      const client = await _getClient(containerName, blobName);
 
-    return await client.downloadToFile(filePath);
-  }
+      return await client.downloadToFile(filePath);
+    },
 
-  async delete(containerName: string, blobName: string) {
-    const client = await this._getClient(containerName, blobName);
+    async delete(containerName: string, blobName: string) {
+      const client = await _getClient(containerName, blobName);
 
-    return await client.delete();
-  }
+      return await client.delete();
+    },
 
-  async deleteLater(containerName: string, blobName: string, delayMs: number) {
-    await this.deleteBlobQueue.add(
-      `${containerName}/${blobName}`,
-      {
-        blobName,
-        containerName,
-      },
-      {
-        delay: delayMs,
-      }
-    );
-  }
+    async deleteLater(
+      containerName: string,
+      blobName: string,
+      delayMs: number
+    ) {
+      await deleteBlobQueue.add(
+        `${containerName}/${blobName}`,
+        { blobName, containerName },
+        {
+          delay: delayMs,
+        }
+      );
+    },
+  };
+});
+
+/*
+AUTOGENERATED!
+*/
+
+export { blobStorageService };
+export type BlobStorageService = InferService<typeof blobStorageService>;
+export function getBlobStorageService(deps: ServiceContainer) {
+  return deps.get<BlobStorageService>(blobStorageService.name);
 }

@@ -1,21 +1,16 @@
-import "dotenv";
+import fastifyToab from "@csi-foxbyte/fastify-toab";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyMultipart from "@fastify/multipart";
-import fastifyRateLimit, { } from "@fastify/rate-limit";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import fastifyUnderPressure from "@fastify/under-pressure";
-import { registerControllers } from "@tganzhorn/fastify-modular";
+import "dotenv";
 import Fastify from "fastify";
 import json from "../package.json" with { type: "json" };
-import { registerAuth } from "./auth/index.js";
-import { Converter3DController } from "./converter3D/converter3D.controller.js";
-import { EventsController } from "./events/events.controller.js";
-import { StatsController } from "./stats/stats.controller.js";
-import { createCache } from "cache-manager";
 import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
-import { BlobStorageController } from "./blobStorage/blobStorage.controller.js";
+import { getRegistries } from "./registries.js";
 
 injectPinoLogger();
 
@@ -79,12 +74,9 @@ fastify.register(fastifySwaggerUi, {
   transformSpecificationClone: true,
 });
 
-const cache = createCache();
-
-registerControllers(fastify, { cache, controllers: [EventsController, Converter3DController, StatsController, BlobStorageController], bullMqConnection: {
-  host: "localhost",
-  port: 6379,
-},});
+fastify.register(fastifyToab, {
+  getRegistries,
+})
 
 fastify.route({
   method: "GET",
@@ -96,7 +88,6 @@ fastify.route({
 
 (async () => {
   try {
-    await registerAuth(fastify, cache);
     await fastify.ready();
     fastify.swagger();
     await fastify.listen({

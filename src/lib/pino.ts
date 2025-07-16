@@ -11,6 +11,7 @@ export const loggerOptions = {
 };
 
 export function injectPinoLogger() {
+  return;
   const pinoLogger = pino(loggerOptions);
 
   console.log = pinoLogger.info.bind(pinoLogger);

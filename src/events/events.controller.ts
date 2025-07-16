@@ -1,174 +1,101 @@
+import { createController } from "@csi-foxbyte/fastify-toab";
+import { Type } from "@sinclair/typebox";
+import { authMiddleware } from "../auth/auth.middleware.js";
+import { eachValueFromAbortable } from "../lib/eachValueFromAbortable.js";
 import {
-  Body,
-  Controller,
-  Parameter,
-  Post,
-  Rep,
-  Req,
-  Schema,
-  Sse,
-} from "@tganzhorn/fastify-modular";
-import { FastifyReply, FastifyRequest } from "fastify";
-import {
-  EventsCreateRequestDTO,
   eventsCreateRequestDTO,
-  EventsHostRequestDTO,
   eventsHostRequestDTO,
-  eventsResponseDTO,
-  eventsStatusResponseDTO,
-  EventsUpdateRequestDTO,
   eventsUpdateRequestDTO,
 } from "./events.dto.js";
-import { EventsService } from "./events.service.js";
+import { getEventsService } from "./events.service.js";
 
-@Controller("/events", [EventsService])
-export class EventsController {
-  constructor(private eventsService: EventsService) {}
+const eventsController = createController()
+  .use(authMiddleware)
+  .rootPath("/events");
 
-  @Sse("/")
-  @Schema({
-    response: {
-      200: {
-        description: "SSE stream",
-        content: {
-          "text/event-stream": {
-            schema: eventsResponseDTO,
-          },
-        },
-      },
-    },
-  })
-  async list(@Rep() reply: FastifyReply, @Req() request: FastifyRequest) {
-    const events = this.eventsService.list().subscribe({
-      next(sseChunk) {
-        reply.raw.write(sseChunk);
-      },
-      error(err) {
-        reply.raw.write(`error: ${JSON.stringify(err)}`);
-        reply.raw.end();
-      },
-      complete() {
-        reply.raw.end();
-      },
-    });
+eventsController
+  .addRoute("SSE", "/")
+  .handler(async function* ({ services, signal }) {
+    const eventsService = await getEventsService(services);
 
-    request.raw.once("close", () => {
-      events.unsubscribe();
-      reply.raw.end();
-    });
-  }
+    const events = eventsService.list();
 
-  @Post("/create")
-  @Schema({
-    body: eventsCreateRequestDTO,
-    response: {
-      204: {
-        description: "Created event.",
-      },
-    },
-  })
-  async create(@Body() body: EventsCreateRequestDTO) {
-    await this.eventsService.createEvent(body);
-  }
+    for await (const value of eachValueFromAbortable(events, signal)) {
+      yield value;
+    }
+  });
 
-  @Post("/update")
-  @Schema({
-    body: eventsUpdateRequestDTO,
-    response: {
-      204: {
-        description: "Updated event.",
-      },
-    },
-  })
-  async update(@Body() body: EventsUpdateRequestDTO) {
-    await this.eventsService.updateEvent(body);
-  }
+eventsController
+  .addRoute("POST", "/create")
+  .body(eventsCreateRequestDTO)
+  .handler(async ({ services, body }) => {
+    const eventsService = await getEventsService(services);
 
-  @Sse("/:id/status")
-  @Schema({
-    response: {
-      200: eventsStatusResponseDTO,
-    },
-  })
-  async status(
-    @Rep() reply: FastifyReply,
-    @Req() request: FastifyRequest,
-    @Parameter("id") id: string
-  ) {
-    const events = this.eventsService.status(id).subscribe({
-      next(sseChunk) {
-        reply.raw.write(sseChunk);
-      },
-      error(err) {
-        reply.raw.write(`error: ${JSON.stringify(err)}`);
-        reply.raw.end();
-      },
-      complete() {
-        reply.raw.end();
-      },
-    });
+    await eventsService.createEvent(body);
+  });
 
-    request.raw.once("close", () => {
-      events.unsubscribe();
-      reply.raw.end();
-    });
-  }
+eventsController
+  .addRoute("POST", "/update")
+  .body(eventsUpdateRequestDTO)
+  .handler(async ({ services, body }) => {
+    const eventsService = await getEventsService(services);
 
-  @Post("/:id/heartbeat")
-  @Schema({
-    response: {
-      204: {
-        description: "Received heartbeat for event.",
-      },
-    },
-  })
-  async heartbeat(@Parameter("id") id: string) {
-    await this.eventsService.setHeartbeat(id);
+    await eventsService.updateEvent(body);
+  });
 
-    return "";
-  }
+eventsController
+  .addRoute("SSE", "/:id/status")
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async function* ({ services, signal, params }) {
+    const eventsService = await getEventsService(services);
 
-  @Post("/:id/host")
-  @Schema({
-    body: eventsHostRequestDTO,
-    response: {
-      204: {
-        description: "Event sucessfully hosted",
-      },
-      400: {
-        description: "Something went wrong.",
-      },
-    },
-  })
-  async host(@Body() body: EventsHostRequestDTO, @Parameter("id") id: string) {
-    await this.eventsService.hostSession(id, body.joinCode);
-  }
+    const events = eventsService.status(params.id);
 
-  @Post("/:id/end")
-  @Schema({
-    response: {
-      204: {
-        description: "Event successfully ended.",
-      },
-    },
-  })
-  async end(@Parameter("id") id: string) {
-    await this.eventsService.endSession(id);
-  }
+    for await (const value of eachValueFromAbortable(events, signal)) {
+      yield value;
+    }
+  });
 
-  @Post("/:id/rehost")
-  @Schema({
-    body: eventsHostRequestDTO,
-    response: {
-      204: {
-        description: "Event successfully rehosted.",
-      },
-    },
-  })
-  async rehost(
-    @Body() body: EventsHostRequestDTO,
-    @Parameter("id") id: string
-  ) {
-    await this.eventsService.rehostSession(id, body.joinCode);
-  }
-}
+eventsController
+  .addRoute("POST", "/:id/heartbeat")
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async ({ services, params }) => {
+    const eventsService = await getEventsService(services);
+
+    await eventsService.setHeartbeat(params.id);
+  });
+
+eventsController
+  .addRoute("POST", "/:id/host")
+  .body(eventsHostRequestDTO)
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async ({ services, params, body }) => {
+    const eventsService = await getEventsService(services);
+
+    await eventsService.hostSession(params.id, body.joinCode);
+  });
+
+eventsController
+  .addRoute("POST", "/:id/end")
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async ({ services, params }) => {
+    const eventsService = await getEventsService(services);
+
+    await eventsService.endSession(params.id);
+  });
+
+eventsController
+  .addRoute("POST", "/:id/rehost")
+  .body(eventsHostRequestDTO)
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async ({ services, params, body }) => {
+    const eventsService = await getEventsService(services);
+
+    await eventsService.rehostSession(params.id, body);
+  });
+
+/*
+AUTOGENERATED!
+*/
+
+export { eventsController };

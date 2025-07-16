@@ -29,6 +29,9 @@ importers:
       '@csi-foxbyte/cityjson-to-3d-tiles':
         specifier: ^0.0.1
         version: 0.0.1(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)
+      '@csi-foxbyte/fastify-toab':
+        specifier: file:C:/Users/tga/Documents/Projekte/fastify-structured/csi-foxbyte-fastify-toab-0.0.3.tgz
+        version: file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.3.tgz
       '@csi-foxbyte/mesh-dem-to-terrain':
         specifier: ^0.0.1
         version: 0.0.1
@@ -337,6 +340,11 @@ packages:
 
   '@csi-foxbyte/cityjson-to-3d-tiles@0.0.1':
     resolution: {integrity: sha512-17DAEsAIYxd/WlNqKVDiB53HnGQMMfXXU5gTDVLpI7rJSG2yGpPkCdzm9v6bqZsuZq4FFz0feIHAEAoCo6XB6w==}
+
+  '@csi-foxbyte/fastify-toab@file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.3.tgz':
+    resolution: {integrity: sha512-XJSabVytE6gNkQ5DnB0/DOxPXVVA6UL3caUkK0KHwkdgSyz+FkUDhuJPsdMUaUKWKPIBSKjuvUwDVCdzEtr6oQ==, tarball: file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.3.tgz}
+    version: 0.0.3
+    hasBin: true
 
   '@csi-foxbyte/mesh-dem-to-terrain@0.0.1':
     resolution: {integrity: sha512-mcNOvQKcwGJipuOwk0TJw8U/n/WXMat6+XgqBjRMHgkUn4VilYaGT1DcBhy6Qd5xB2tQj0R/GzV0QKquqLFwLQ==}
@@ -1588,6 +1596,9 @@ packages:
 
   bullmq@5.56.1:
     resolution: {integrity: sha512-HmX53sf24bbDj5NVrDLDEjy8OSDmbGMESfvFhVK8NpHsA4WlAdKxPDf7c5b9RZf5wZGHyAd2XhWSkE9dmNPYww==}
+
+  bullmq@5.56.4:
+    resolution: {integrity: sha512-5wSHd0oXs2jS6P+6tay/01Iz0cWRK8iYcscKtpS/GewEq0bJZwbkMZc77GJVOT9SP+UQuXA2y+pQTdCQJel7kQ==}
 
   bundle-require@5.1.0:
     resolution: {integrity: sha512-3WrrOuZiyaaZPWiEt4G3+IffISVC9HYlWueJEBWED4ZH4aIAC2PnkdnuRrR94M+w6yGWn4AglWtJtBI8YqvgoA==}
@@ -4290,6 +4301,15 @@ snapshots:
       - supports-color
       - yaml
 
+  '@csi-foxbyte/fastify-toab@file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.3.tgz':
+    dependencies:
+      bullmq: 5.56.4
+      commander: 14.0.0
+      handlebars: 4.7.8
+      tiny-glob: 0.2.9
+    transitivePeerDependencies:
+      - supports-color
+
   '@csi-foxbyte/mesh-dem-to-terrain@0.0.1':
     dependencies:
       '@gltf-transform/core': 4.2.0
@@ -5516,6 +5536,18 @@ snapshots:
     optional: true
 
   bullmq@5.56.1:
+    dependencies:
+      cron-parser: 4.9.0
+      ioredis: 5.6.1
+      msgpackr: 1.11.4
+      node-abort-controller: 3.1.1
+      semver: 7.7.2
+      tslib: 2.8.1
+      uuid: 9.0.1
+    transitivePeerDependencies:
+      - supports-color
+
+  bullmq@5.56.4:
     dependencies:
       cron-parser: 4.9.0
       ioredis: 5.6.1

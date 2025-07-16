@@ -1,115 +1,85 @@
-import {
-  Body,
-  Controller,
-  Get,
-  OnEvent,
-  Post,
-  Query,
-  Rep,
-  Req,
-  Schema,
-  Worker,
-} from "@tganzhorn/fastify-modular";
-import { FastifyReply, FastifyRequest } from "fastify";
+import { createController, GenericRouteError } from "@csi-foxbyte/fastify-toab";
 import proj4list from "proj4-list";
-import { BlobStorageService } from "../blobStorage/blobStorage.service.js";
 import {
   downloadProjectModelRequestDTIO,
-  DownloadProjectModelRequestDTIO,
-  GetProjectModelStatusRequestDTO,
   getProjectModelStatusRequestDTO,
-  GetProjectModelStatusResponseDTO,
   getProjectModelStatusResponseDTO,
   upload3DTileRequestDTO,
   uploadProjectModelRequestDTO,
-  UploadProjectModelResponseDTO,
   uploadProjectModelResponseDTO,
   uploadTerrainRequestDTO,
 } from "./converter3D.dto.js";
-import { Converter3DService } from "./converter3D.service.js";
-import { Convert3DTilesQueueName } from "./jobs/convert3DTiles.job.js";
-import {
-  ConvertProjectModelJob,
-  ConvertProjectModelQueueName,
-} from "./jobs/convertProjectModel.job.js";
-import {
-  ConvertTerrainJob,
-  ConvertTerrainQueueName,
-} from "./jobs/convertTerrain.job.js";
-import { Type } from "@sinclair/typebox";
+import { getConverter3DService } from "./converter3D.service.js";
+import { authMiddleware } from "../auth/auth.middleware.js";
 
-@Controller("/converter3D", [Converter3DService, BlobStorageService])
-export class Converter3DController {
-  constructor(private converter3DService: Converter3DService) {}
+const converter3DController = createController()
+  .use(authMiddleware)
+  .rootPath("/converter3D");
 
-  // #region project model
+converter3DController
+  .addRoute("POST", "/uploadProjectModel")
+  .body(uploadProjectModelRequestDTO)
+  .output(uploadProjectModelResponseDTO)
+  .handler(
+    async ({ request, services }) => {
+      const converter3DService = await getConverter3DService(services);
 
-  @Schema({
-    consumes: ["multipart/form-data"],
-    body: uploadProjectModelRequestDTO,
-    response: { 200: uploadProjectModelResponseDTO },
-  })
-  @Post("/uploadProjectModel", {
-    validatorCompiler: () => () => ({ value: true }),
-  })
-  async uploadProjectModel(
-    @Req() request: FastifyRequest,
-    @Rep() reply: FastifyReply
-  ): Promise<UploadProjectModelResponseDTO> {
-    let fileName = "";
-    let epsgCode = "";
+      let fileName = "";
+      let epsgCode = "";
 
-    for await (const part of request.parts()) {
-      if (part.fieldname === "fileName" && part.type === "field")
-        fileName = part.value as string;
-      if (part.fieldname === "epsgCode" && part.type === "field")
-        epsgCode = part.value as string;
-      if (part.type === "file") {
-        const srcSRS = proj4list[epsgCode][1];
+      for await (const part of request.parts()) {
+        if (part.fieldname === "fileName" && part.type === "field")
+          fileName = part.value as string;
+        if (part.fieldname === "epsgCode" && part.type === "field")
+          epsgCode = part.value as string;
+        if (part.type === "file") {
+          const srcSRS = proj4list[epsgCode][1];
 
-        if (!srcSRS) {
-          return reply.code(400).send({ message: "Epsg code not found!" });
+          if (!srcSRS) {
+            throw new GenericRouteError("BAD_REQUEST", "Epsg code not found!");
+          }
+
+          return converter3DService.uploadProjectModel(
+            part.file,
+            fileName,
+            srcSRS
+          );
         }
-
-        return this.converter3DService.uploadProjectModel(
-          part.file,
-          fileName,
-          srcSRS
-        );
       }
-    }
 
-    throw new Error("Bad request");
-  }
-
-  @Schema({
-    body: getProjectModelStatusRequestDTO,
-    response: {
-      200: getProjectModelStatusResponseDTO,
+      throw new GenericRouteError(
+        "BAD_REQUEST",
+        "Didn't get all required parameters!"
+      );
     },
-  })
-  @Post("/getProjectModelStatus")
-  async getProjectModelStatus(
-    @Body() body: GetProjectModelStatusRequestDTO
-  ): Promise<GetProjectModelStatusResponseDTO> {
-    return await this.converter3DService.getProjectModelStatus(
+    {
+      validatorCompiler: () => () => ({ value: true }),
+      schema: {
+        consumes: ["multipart/form-data"],
+      },
+    }
+  );
+
+converter3DController
+  .addRoute("POST", "/getProjectModelStatus")
+  .body(getProjectModelStatusRequestDTO)
+  .output(getProjectModelStatusResponseDTO)
+  .handler(async ({ body, services }) => {
+    const converter3DService = await getConverter3DService(services);
+
+    return await converter3DService.getProjectModelStatus(
       body.jobId,
       body.secret
     );
-  }
+  });
 
-  @Schema({
-    body: downloadProjectModelRequestDTIO,
-    response: {
-      200: Type.String({ format: "binary" }),
-    },
-  })
-  @Post("/downloadProjectModel")
-  async downloadProjectModel(
-    @Body() body: DownloadProjectModelRequestDTIO,
-    @Rep() reply: FastifyReply
-  ) {
-    const stream = await this.converter3DService.downloadProjectModel(
+converter3DController
+  .addRoute("POST", "/downloadProjectModel")
+  .body(downloadProjectModelRequestDTIO)
+  .handler(async ({ reply, body, services }) => {
+    const converter3DService = await getConverter3DService(services);
+
+    const stream = await converter3DService.downloadProjectModel(
       body.jobId,
       body.secret
     );
@@ -118,224 +88,81 @@ export class Converter3DController {
       .header("content-type", "application/octet-stream")
       .header("content-disposition", 'attachment; filename="big-file.glb"');
 
-    return stream!;
-  }
+    return stream! as unknown as void;
+  });
 
-  @OnEvent(
-    "failed",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      await controller.converter3DService.deleteProjectModelRemnants(
-        job.data.blobName
-      );
-    }
-  )
-  @OnEvent(
-    "completed",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      controller.converter3DService;
-    }
-  )
-  @Worker(
-    ConvertProjectModelQueueName,
-    new URL("./workers/convertProjectModel.worker.js", import.meta.url),
-    {
-      concurrency: 2,
-      useWorkerThreads: true,
-      removeOnComplete: { count: 100, age: 3600 },
-      removeOnFail: { count: 200, age: 24 * 3600 },
-    }
-  )
-  async convertProjectModel() {}
+converter3DController
+  .addRoute("POST", "/uploadTerrain")
+  .body(uploadTerrainRequestDTO)
+  .handler(
+    async ({ request, services }) => {
+      const converter3DService = await getConverter3DService(services);
 
-  // #endregion
-
-  // #region terrain
-
-  @Schema({
-    consumes: ["multipart/form-data"],
-    body: uploadTerrainRequestDTO,
-  })
-  @Post("/uploadTerrain", {
-    validatorCompiler: () => () => ({ value: true }),
-  })
-  async uploadTerrain(@Req() request: FastifyRequest) {
-    let srcSRS: null | string = null;
-    let name: null | string = null;
-    for await (const part of request.parts()) {
-      if (part.type === "field" && part.fieldname === "srcSRS")
-        srcSRS = part.value as string;
-      if (part.type === "field" && part.fieldname === "name")
-        name = part.value as string;
-      if (part.type === "file") {
-        if (!srcSRS) throw new Error("No src srs provided!");
-        if (!name) throw new Error("No name provided!");
-        return await this.converter3DService.uploadTerrain(
-          part.file,
-          name,
-          srcSRS
-        );
+      let srcSRS: null | string = null;
+      let name: null | string = null;
+      for await (const part of request.parts()) {
+        if (part.type === "field" && part.fieldname === "srcSRS")
+          srcSRS = part.value as string;
+        if (part.type === "field" && part.fieldname === "name")
+          name = part.value as string;
+        if (part.type === "file") {
+          if (!srcSRS)
+            throw new GenericRouteError("BAD_REQUEST", "No src srs provided!");
+          if (!name)
+            throw new GenericRouteError("BAD_REQUEST", "No name provided!");
+          return await converter3DService.uploadTerrain(
+            part.file,
+            name,
+            srcSRS
+          );
+        }
       }
-    }
 
-    throw new Error("No file supplied!");
-  }
-
-  @OnEvent(
-    "active",
-    async (controller: Converter3DController, job: ConvertTerrainJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        0,
-        "ACTIVE"
-      );
-    }
-  )
-  @OnEvent(
-    "progress",
-    async (controller: Converter3DController, job: ConvertTerrainJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        +job.progress.valueOf(),
-        "ACTIVE"
-      );
-    }
-  )
-  @OnEvent(
-    "completed",
-    async (controller: Converter3DController, job: ConvertTerrainJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        1,
-        "COMPLETED"
-      );
-    }
-  )
-  @OnEvent(
-    "failed",
-    async (controller: Converter3DController, job: ConvertTerrainJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        1,
-        "FAILED"
-      );
-    }
-  )
-  @OnEvent(
-    "stalled",
-    async (controller: Converter3DController, job: ConvertTerrainJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        1,
-        "FAILED"
-      );
-    }
-  )
-  @Worker(
-    ConvertTerrainQueueName,
-    new URL("./workers/convertTerrain.worker.js", import.meta.url),
+      throw new GenericRouteError("BAD_REQUEST", "No file supplied!");
+    },
     {
-      concurrency: 1,
-      useWorkerThreads: true,
-      removeOnComplete: { count: 100, age: 3600 },
-      removeOnFail: { count: 200, age: 24 * 3600 },
+      schema: {
+        consumes: ["multipart/form-data"],
+      },
+      validatorCompiler: () => () => ({ value: true }),
     }
-  )
-  async convertTerrain() {}
+  );
 
-  // #endregion
+converter3DController
+  .addRoute("POST", "/upload3DTile")
+  .body(upload3DTileRequestDTO)
+  .handler(
+    async ({ request, services }) => {
+      const converter3DService = await getConverter3DService(services);
 
-  // #region 3d tile
-
-  @Schema({
-    consumes: ["multipart/form-data"],
-    body: upload3DTileRequestDTO,
-  })
-  @Post("/upload3DTile", {
-    validatorCompiler: () => () => ({ value: true }),
-  })
-  async upload3DTile(@Req() request: FastifyRequest) {
-    let srcSRS: null | string = null;
-    let name: null | string = null;
-    for await (const part of request.parts()) {
-      if (part.type === "field" && part.fieldname === "srcSRS")
-        srcSRS = part.value as string;
-      if (part.type === "field" && part.fieldname === "name")
-        name = part.value as string;
-      if (part.type === "file") {
-        if (!srcSRS) throw new Error("No src srs provided!");
-        if (!name) throw new Error("No name provided!");
-        return await this.converter3DService.upload3DTile(
-          part.file,
-          name,
-          srcSRS
-        );
+      let srcSRS: null | string = null;
+      let name: null | string = null;
+      for await (const part of request.parts()) {
+        if (part.type === "field" && part.fieldname === "srcSRS")
+          srcSRS = part.value as string;
+        if (part.type === "field" && part.fieldname === "name")
+          name = part.value as string;
+        if (part.type === "file") {
+          if (!srcSRS)
+            throw new GenericRouteError("BAD_REQUEST", "No src srs provided!");
+          if (!name)
+            throw new GenericRouteError("BAD_REQUEST", "No name provided!");
+          return await converter3DService.upload3DTile(part.file, name, srcSRS);
+        }
       }
-    }
 
-    throw new Error("No file supplied!");
-  }
-
-  @OnEvent(
-    "active",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        0,
-        "ACTIVE"
-      );
-    }
-  )
-  @OnEvent(
-    "progress",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        +job.progress.valueOf(),
-        "ACTIVE"
-      );
-    }
-  )
-  @OnEvent(
-    "completed",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        1,
-        "COMPLETED"
-      );
-    }
-  )
-  @OnEvent(
-    "failed",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        1,
-        "FAILED"
-      );
-    }
-  )
-  @OnEvent(
-    "stalled",
-    async (controller: Converter3DController, job: ConvertProjectModelJob) => {
-      await controller.converter3DService.updateBaseLayerStatus(
-        job.data.blobName,
-        1,
-        "FAILED"
-      );
-    }
-  )
-  @Worker(
-    Convert3DTilesQueueName,
-    new URL("./workers/convert3DTiles.worker.js", import.meta.url),
+      throw new GenericRouteError("BAD_REQUEST", "No file supplied!");
+    },
     {
-      concurrency: 1,
-      useWorkerThreads: true,
-      removeOnComplete: { count: 100, age: 3600 },
-      removeOnFail: { count: 200, age: 24 * 3600 },
+      schema: {
+        consumes: ["multipart/form-data"],
+      },
+      validatorCompiler: () => () => ({ value: true }),
     }
-  )
-  async convert3DTile() {}
+  );
 
-  // #endregion
-}
+/*
+AUTOGENERATED!
+*/
+
+export { converter3DController };
