@@ -2,7 +2,6 @@ import fastifyToab from "@csi-foxbyte/fastify-toab";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyMultipart from "@fastify/multipart";
-import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import fastifyUnderPressure from "@fastify/under-pressure";
@@ -11,6 +10,9 @@ import Fastify from "fastify";
 import json from "../package.json" with { type: "json" };
 import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
 import { getRegistries } from "./registries.js";
+import { createBullBoard } from '@bull-board/api';
+import {BullMQAdapter} from "@bull-board/api/bullMQAdapter.js";
+import { FastifyAdapter } from '@bull-board/fastify';
 
 injectPinoLogger();
 
@@ -23,10 +25,10 @@ process.on("unhandledRejection", (reason) => {
 });
 
 fastify.register(fastifyHelmet, {});
-fastify.register(fastifyRateLimit, {
-  max: 50,
-  timeWindow: "1 minute",
-});
+// fastify.register(fastifyRateLimit, {
+//   max: 200,
+//   timeWindow: "1 minute",
+// });
 fastify.register(fastifyUnderPressure, {});
 fastify.register(fastifyCors, {});
 
@@ -36,6 +38,8 @@ fastify.register(fastifyMultipart, {
     files: 10,
   },
 });
+
+
 
 fastify.register(fastifySwagger, {
   openapi: {
@@ -74,8 +78,12 @@ fastify.register(fastifySwaggerUi, {
   transformSpecificationClone: true,
 });
 
+const registries = await getRegistries();
+
 fastify.register(fastifyToab, {
-  getRegistries,
+  async getRegistries() {
+    return registries;
+  },
 })
 
 fastify.route({
@@ -88,8 +96,21 @@ fastify.route({
 
 (async () => {
   try {
+    const serverAdapter = new FastifyAdapter();
+
+    createBullBoard({
+      queues: Array.from(registries.workerRegistry.queues.values()).map(queue => new BullMQAdapter(queue)),
+      serverAdapter,
+    })
+
+    serverAdapter.setBasePath("/bullMQ")
+
+    fastify.register(serverAdapter.registerPlugin(), { prefix: "/bullMQ"});
+
     await fastify.ready();
+
     fastify.swagger();
+
     await fastify.listen({
       host: "0.0.0.0",
       port: parseInt(process.env.PORT!),

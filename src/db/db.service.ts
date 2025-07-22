@@ -14,7 +14,7 @@ const dbService = createService("db", async ({ services }) => {
      * Needs to be called within a request context!
      * @returns
      */
-    requestEnhancedClient() {
+    getEnhancedClient() {
       return new Promise<Enhanced<typeof prisma>>(async (resolve, reject) => {
         const authService = await getAuthService(services);
 

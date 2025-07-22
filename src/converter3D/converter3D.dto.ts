@@ -7,6 +7,13 @@ export const uploadTerrainRequestDTO = Type.Object({
 });
 export type UploadTerrainRequestDTO = Static<typeof uploadTerrainRequestDTO>;
 
+export const uploadTerrainResponseDTO = Type.Object({
+  srcSRS: Type.String(),
+  name: Type.String(),
+  file: Type.String({ format: "binary" }),
+});
+export type UploadTerrainResponseDTO = Static<typeof uploadTerrainResponseDTO>;
+
 export const upload3DTileRequestDTO = Type.Object({
   srcSRS: Type.String(),
   name: Type.String(),

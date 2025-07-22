@@ -20,7 +20,7 @@ const eventsService = createService("events", async ({ services }) => {
   const authService = await getAuthService(services);
 
   async function fetchAll() {
-    const enhancedClient = await dbService.requestEnhancedClient();
+    const enhancedClient = await dbService.getEnhancedClient();
 
     return await enhancedClient.event.findMany({
       select: {
@@ -32,7 +32,7 @@ const eventsService = createService("events", async ({ services }) => {
   }
 
   async function fetchStatus(id: string) {
-    const enhancedClient = await dbService.requestEnhancedClient();
+    const enhancedClient = await dbService.getEnhancedClient();
 
     return await enhancedClient.event.findFirstOrThrow({
       where: {
@@ -46,7 +46,7 @@ const eventsService = createService("events", async ({ services }) => {
   }
 
   async function checkHeartbeat(id: string) {
-    const enhancedClient = await dbService.requestEnhancedClient();
+    const enhancedClient = await dbService.getEnhancedClient();
 
     const { heartbeatTimestamp, status } =
       await enhancedClient.event.findFirstOrThrow({
@@ -87,7 +87,7 @@ const eventsService = createService("events", async ({ services }) => {
       title: string;
       attendees: string[];
     }) {
-      const enhancedClient = await dbService.requestEnhancedClient();
+      const enhancedClient = await dbService.getEnhancedClient();
 
       await enhancedClient.event.create({
         data: {
@@ -124,7 +124,7 @@ const eventsService = createService("events", async ({ services }) => {
       title?: string;
       attendees?: string[];
     }) {
-      const enhancedClient = await dbService.requestEnhancedClient();
+      const enhancedClient = await dbService.getEnhancedClient();
 
       return await enhancedClient.event.update({
         data: {
@@ -166,7 +166,7 @@ const eventsService = createService("events", async ({ services }) => {
     },
 
     async setHeartbeat(id: string) {
-      const enhancedClient = await dbService.requestEnhancedClient();
+      const enhancedClient = await dbService.getEnhancedClient();
 
       await enhancedClient.event.update({
         where: {
@@ -183,7 +183,7 @@ const eventsService = createService("events", async ({ services }) => {
     checkHeartbeat,
 
     async hostSession(id: string, joinCode: string) {
-      const enhancedClient = await dbService.requestEnhancedClient();
+      const enhancedClient = await dbService.getEnhancedClient();
 
       await enhancedClient.event.update({
         where: {
@@ -200,7 +200,7 @@ const eventsService = createService("events", async ({ services }) => {
     },
 
     async endSession(id: string) {
-      const enhancedClient = await dbService.requestEnhancedClient();
+      const enhancedClient = await dbService.getEnhancedClient();
 
       await enhancedClient.event.update({
         where: {
@@ -215,7 +215,7 @@ const eventsService = createService("events", async ({ services }) => {
     },
 
     async rehostSession(id: string, joinCode: string) {
-      const enhancedClient = await dbService.requestEnhancedClient();
+      const enhancedClient = await dbService.getEnhancedClient();
 
       await enhancedClient.event.update({
         where: {

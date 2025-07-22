@@ -34,13 +34,13 @@ export default async function run(
 
   const blobStorageService = await getBlobStorageService(services);
 
-  console.log("Converting 3D Tiles...");
+  job.log("Initialized worker.");
   const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
 
-  const throttledProgress = _.throttle(async (progress: JobProgress) => {
+  const throttledProgress = _.throttle(async (progress: number) => {
     await job.updateProgress(progress);
-    console.log({ progress });
-  }, 1_000);
+    job.log(JSON.stringify(progress));
+  }, 5_000);
 
   try {
     const zipPath = path.join(rootPath, job.data.blobName + ".zip");
@@ -51,50 +51,61 @@ export default async function run(
 
     await mkdir(rootPath, { recursive: true });
 
+    job.log("Downloading zip file...");
     await blobStorageService.downloadToFile(
       job.data.containerName,
       job.data.blobName,
       zipPath
     );
+    job.log("Downloaded zip file.");
 
-    await throttledProgress(0.05);
+    await throttledProgress(0.05 * 100);
 
     // unpack files
+    job.log("Unpacking files...");
     const unpackedPath = path.join(rootPath, "unpacked");
+    job.log("Unpacked files.");
 
     await seven.unpack(zipPath, unpackedPath);
 
-    await throttledProgress(0.1);
+    await throttledProgress(0.1 * 100);
 
     // preprocess with citygml tools
+    job.log("Preprocessing with citygml-tools...");
     await cityGMLToCityJSON(unpackedPath);
+    job.log("Preprocessed with citygml-tools.");
 
-    await throttledProgress(0.15);
+    await throttledProgress(0.15 * 100);
 
     // generate tile db
+    job.log("Generating tile database...");
     const { dbFilePath } = await generateTileDatabaseFromCityJSON(
       unpackedPath,
       rootPath,
       "rgbTexture",
-      async (progress) => await throttledProgress(0.15 + progress * 0.3),
+      async (progress) =>
+        await throttledProgress((0.15 + progress * 0.3) * 100),
       { threadCount: 4 }
     );
+    job.log("Generated tile database.");
 
     const tilesPath = path.join(rootPath, "tiles");
 
     // generate 3d tiles from tile db
+    job.log("Generating 3d tiles from database...");
     await generate3DTilesFromTileDatabase(
       dbFilePath,
       tilesPath,
       async (progress) => {
-        await throttledProgress(0.45 + progress * 0.3);
+        await throttledProgress((0.45 + progress * 0.3) * 100);
       },
       {
         threadCount: 4,
       }
     );
+    job.log("Generated 3d tiles from database.");
 
-    const files = await glob(tilesPath.split("\\").join("/") + "/*", {
+    const files = await glob("./*", {
       filesOnly: true,
       cwd: tilesPath,
     });
@@ -112,7 +123,9 @@ export default async function run(
 
       uploadedFiles++;
 
-      await throttledProgress(0.75 + (uploadedFiles / files.length) * 0.25);
+      await throttledProgress(
+        (0.75 + (uploadedFiles / files.length) * 0.25) * 100
+      );
     }
 
     // cleanup
@@ -124,7 +137,7 @@ export default async function run(
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
   } catch (e) {
-    console.error(e);
+    job.log(JSON.stringify(e));
     try {
       await blobStorageService.delete(
         job.data.containerName,

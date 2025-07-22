@@ -12,6 +12,7 @@
 
 .dev
 .build
+localPackages
 
 # testing
 /coverage

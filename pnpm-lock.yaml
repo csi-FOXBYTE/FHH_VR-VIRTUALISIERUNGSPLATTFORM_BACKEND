@@ -11,15 +11,9 @@ importers:
       7zip-min:
         specifier: ^2.1.0
         version: 2.1.0
-      '@azure/data-tables':
-        specifier: ^13.3.1
-        version: 13.3.1
       '@azure/storage-blob':
         specifier: ^12.27.0
         version: 12.27.0
-      '@azure/storage-queue':
-        specifier: ^12.26.0
-        version: 12.26.0
       '@bull-board/api':
         specifier: ^6.11.0
         version: 6.11.0(@bull-board/ui@6.11.0)
@@ -27,14 +21,17 @@ importers:
         specifier: ^6.11.0
         version: 6.11.0
       '@csi-foxbyte/cityjson-to-3d-tiles':
-        specifier: ^0.0.1
-        version: 0.0.1(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)
+        specifier: ^0.0.2
+        version: 0.0.2(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)
       '@csi-foxbyte/fastify-toab':
         specifier: ^0.0.4
         version: 0.0.4(bullmq@5.56.4)
       '@csi-foxbyte/mesh-dem-to-terrain':
         specifier: ^0.0.1
         version: 0.0.1
+      '@csi-foxbyte/prisma-mssql-realtime-extension':
+        specifier: ^0.0.3
+        version: 0.0.3(@prisma/client@6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3))(rxjs-for-await@1.0.0(rxjs@7.8.2))(rxjs@7.8.2)
       '@fastify/cors':
         specifier: ^11.0.1
         version: 11.0.1
@@ -59,15 +56,9 @@ importers:
       '@prisma/client':
         specifier: 6.8.2
         version: 6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3)
-      '@tganzhorn/fastify-modular':
-        specifier: ^0.1.16
-        version: 0.1.16
       '@types/lodash':
         specifier: ^4.17.20
         version: 4.17.20
-      '@types/lodash.debounce':
-        specifier: ^4.0.9
-        version: 4.0.9
       bullmq:
         specifier: ^5.56.4
         version: 5.56.4
@@ -83,24 +74,18 @@ importers:
       fastify:
         specifier: ^5.3.3
         version: 5.3.3
+      ioredis:
+        specifier: ^5.6.1
+        version: 5.6.1
       jose:
         specifier: ^6.0.11
         version: 6.0.11
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      lodash.debounce:
-        specifier: ^4.0.8
-        version: 4.0.8
-      lodash.throttle:
-        specifier: ^4.1.1
-        version: 4.1.1
       pino:
         specifier: ^9.7.0
         version: 9.7.0
-      piscina:
-        specifier: ^5.1.2
-        version: 5.1.2
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
@@ -110,9 +95,9 @@ importers:
       sharp:
         specifier: ^0.34.2
         version: 0.34.2
-      superjson:
-        specifier: ^2.2.2
-        version: 2.2.2
+      sqlite3:
+        specifier: ^5.1.7
+        version: 5.1.7
     devDependencies:
       '@auth/core':
         specifier: ^0.39.1
@@ -280,20 +265,12 @@ packages:
     resolution: {integrity: sha512-gT4H8mTaSXRz7eGTuQyq1aIJnJqeXzpOe9Ay7Z3FrCouer14CbV3VzjnJrNrQfbBpGBLO9oy8BmrY75A0p53cA==}
     engines: {node: '>=18.0.0'}
 
-  '@azure/data-tables@13.3.1':
-    resolution: {integrity: sha512-jGk1s1SbAfy39zxArNn4HAmycmHF/+XtYYRZ6kakayxJNQeeuacSkLUioezOZIVI01i3Yvr4xzTMuKZpdKXf1Q==}
-    engines: {node: '>=18.0.0'}
-
   '@azure/logger@1.2.0':
     resolution: {integrity: sha512-0hKEzLhpw+ZTAfNJyRrn6s+V0nDWzXk9OjBr2TiGIu0OfMr5s2V4FpKLTAK3Ca5r5OKLbf4hkOGDPyiRjie/jA==}
     engines: {node: '>=18.0.0'}
 
   '@azure/storage-blob@12.27.0':
     resolution: {integrity: sha512-IQjj9RIzAKatmNca3D6bT0qJ+Pkox1WZGOg2esJF2YLHb45pQKOwGPIAV+w3rfgkj7zV3RMxpn/c6iftzSOZJQ==}
-    engines: {node: '>=18.0.0'}
-
-  '@azure/storage-queue@12.26.0':
-    resolution: {integrity: sha512-7rJRQR38PGj7ACALipindPTc5lyKEFlW6UNuqQZiyR1iZ9iynDqBkBlwMiAgKtN6ee8DDBv9fQGXDVSAYof/2w==}
     engines: {node: '>=18.0.0'}
 
   '@bull-board/api@6.11.0':
@@ -338,8 +315,8 @@ packages:
   '@chevrotain/utils@10.4.2':
     resolution: {integrity: sha512-V34dacxWLwKcvcy32dx96ADJVdB7kOJLm7LyBkBQw5u5HC9WdEFw2G17zml+U3ivavGTrGPJHl8o9/UJm0PlUw==}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.1':
-    resolution: {integrity: sha512-17DAEsAIYxd/WlNqKVDiB53HnGQMMfXXU5gTDVLpI7rJSG2yGpPkCdzm9v6bqZsuZq4FFz0feIHAEAoCo6XB6w==}
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.2':
+    resolution: {integrity: sha512-YXQF7C49kXrzs/dSSVZnPKUOydapx9cAIXPX4LMo4bGFJcjVCC4LAgb9IOkYS671YmtgU2yJTFrF7ol0FwrYaA==}
 
   '@csi-foxbyte/fastify-toab@0.0.4':
     resolution: {integrity: sha512-1M3/cAUuBb7Rb0NJP4Rbuud49bWkG4W70gCVXybQNQYW0xWCq5HTi79Zprc/FQA4Sq+yMU9nbJ6m8KBXkZUClQ==}
@@ -349,6 +326,13 @@ packages:
 
   '@csi-foxbyte/mesh-dem-to-terrain@0.0.1':
     resolution: {integrity: sha512-mcNOvQKcwGJipuOwk0TJw8U/n/WXMat6+XgqBjRMHgkUn4VilYaGT1DcBhy6Qd5xB2tQj0R/GzV0QKquqLFwLQ==}
+
+  '@csi-foxbyte/prisma-mssql-realtime-extension@0.0.3':
+    resolution: {integrity: sha512-7nhsfW9/hCzfNBYeeKzSRpoLUBJxFnN05+F5j50IHj9H+xHfPqquvTB9UY83XQBMx3YshYpTQ6XVLPTlJ/YGBQ==}
+    peerDependencies:
+      '@prisma/client': ^6.0.0
+      rxjs: ^7.0.0
+      rxjs-for-await: ^1.0.0
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
@@ -906,106 +890,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@napi-rs/nice-android-arm-eabi@1.0.4':
-    resolution: {integrity: sha512-OZFMYUkih4g6HCKTjqJHhMUlgvPiDuSLZPbPBWHLjKmFTv74COzRlq/gwHtmEVaR39mJQ6ZyttDl2HNMUbLVoA==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [android]
-
-  '@napi-rs/nice-android-arm64@1.0.4':
-    resolution: {integrity: sha512-k8u7cjeA64vQWXZcRrPbmwjH8K09CBnNaPnI9L1D5N6iMPL3XYQzLcN6WwQonfcqCDv5OCY3IqX89goPTV4KMw==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [android]
-
-  '@napi-rs/nice-darwin-arm64@1.0.4':
-    resolution: {integrity: sha512-GsLdQvUcuVzoyzmtjsThnpaVEizAqH5yPHgnsBmq3JdVoVZHELFo7PuJEdfOH1DOHi2mPwB9sCJEstAYf3XCJA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@napi-rs/nice-darwin-x64@1.0.4':
-    resolution: {integrity: sha512-1y3gyT3e5zUY5SxRl3QDtJiWVsbkmhtUHIYwdWWIQ3Ia+byd/IHIEpqAxOGW1nhhnIKfTCuxBadHQb+yZASVoA==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@napi-rs/nice-freebsd-x64@1.0.4':
-    resolution: {integrity: sha512-06oXzESPRdXUuzS8n2hGwhM2HACnDfl3bfUaSqLGImM8TA33pzDXgGL0e3If8CcFWT98aHows5Lk7xnqYNGFeA==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [freebsd]
-
-  '@napi-rs/nice-linux-arm-gnueabihf@1.0.4':
-    resolution: {integrity: sha512-CgklZ6g8WL4+EgVVkxkEvvsi2DSLf9QIloxWO0fvQyQBp6VguUSX3eHLeRpqwW8cRm2Hv/Q1+PduNk7VK37VZw==}
-    engines: {node: '>= 10'}
-    cpu: [arm]
-    os: [linux]
-
-  '@napi-rs/nice-linux-arm64-gnu@1.0.4':
-    resolution: {integrity: sha512-wdAJ7lgjhAlsANUCv0zi6msRwq+D4KDgU+GCCHssSxWmAERZa2KZXO0H2xdmoJ/0i03i6YfK/sWaZgUAyuW2oQ==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@napi-rs/nice-linux-arm64-musl@1.0.4':
-    resolution: {integrity: sha512-4b1KYG+sriufhFrpUS9uNOEYYJqSfcbnwGx6uGX7JjrH8tELG90cOpCawz5THNIwlS3DhLgnCOcn0+4p6z26QA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@napi-rs/nice-linux-ppc64-gnu@1.0.4':
-    resolution: {integrity: sha512-iaf3vMRgr23oe1PUaKpxaH3DS0IMN0+N9iEiWVwYPm/U15vZFYdqVegGfN2PzrZLUl5lc8ZxbmEKDfuqslhAMA==}
-    engines: {node: '>= 10'}
-    cpu: [ppc64]
-    os: [linux]
-
-  '@napi-rs/nice-linux-riscv64-gnu@1.0.4':
-    resolution: {integrity: sha512-UXoREY6Yw6rHrGuTwQgBxpfjK34t6mTjibE9/cXbefL9AuUCJ9gEgwNKZiONuR5QGswChqo9cnthjdKkYyAdDg==}
-    engines: {node: '>= 10'}
-    cpu: [riscv64]
-    os: [linux]
-
-  '@napi-rs/nice-linux-s390x-gnu@1.0.4':
-    resolution: {integrity: sha512-eFbgYCRPmsqbYPAlLYU5hYTNbogmIDUvknilehHsFhCH1+0/kN87lP+XaLT0Yeq4V/rpwChSd9vlz4muzFArtw==}
-    engines: {node: '>= 10'}
-    cpu: [s390x]
-    os: [linux]
-
-  '@napi-rs/nice-linux-x64-gnu@1.0.4':
-    resolution: {integrity: sha512-4T3E6uTCwWT6IPnwuPcWVz3oHxvEp/qbrCxZhsgzwTUBEwu78EGNXGdHfKJQt3soth89MLqZJw+Zzvnhrsg1mQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@napi-rs/nice-linux-x64-musl@1.0.4':
-    resolution: {integrity: sha512-NtbBkAeyBPLvCBkWtwkKXkNSn677eaT0cX3tygq+2qVv71TmHgX4gkX6o9BXjlPzdgPGwrUudavCYPT9tzkEqQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@napi-rs/nice-win32-arm64-msvc@1.0.4':
-    resolution: {integrity: sha512-vubOe3i+YtSJGEk/++73y+TIxbuVHi+W8ZzrRm2eETCjCRwNlgbfToQZ85dSA+4iBB/NJRGNp+O4hfdbbttZWA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [win32]
-
-  '@napi-rs/nice-win32-ia32-msvc@1.0.4':
-    resolution: {integrity: sha512-BMOVrUDZeg1RNRKVlh4eyLv5djAAVLiSddfpuuQ47EFjBcklg0NUeKMFKNrKQR4UnSn4HAiACLD7YK7koskwmg==}
-    engines: {node: '>= 10'}
-    cpu: [ia32]
-    os: [win32]
-
-  '@napi-rs/nice-win32-x64-msvc@1.0.4':
-    resolution: {integrity: sha512-kCNk6HcRZquhw/whwh4rHsdPyOSCQCgnVDVik+Y9cuSVTDy3frpiCJTScJqPPS872h4JgZKkr/+CwcwttNEo9Q==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-
-  '@napi-rs/nice@1.0.4':
-    resolution: {integrity: sha512-Sqih1YARrmMoHlXGgI9JrrgkzxcaaEso0AH+Y7j8NHonUs+xe4iDsgC3IBIDNdzEewbNpccNN6hip+b5vmyRLw==}
-    engines: {node: '>= 10'}
-
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
@@ -1259,9 +1143,6 @@ packages:
   '@sinclair/typebox@0.34.33':
     resolution: {integrity: sha512-5HAV9exOMcXRUxo+9iYB5n09XxzCXnfy4VTNW4xnDv+FgjzAGY989C28BIdljKqmF+ZltUwujE3aossvcVtq6g==}
 
-  '@sinclair/typebox@0.34.37':
-    resolution: {integrity: sha512-2TRuQVgQYfy+EzHRTIvkhv2ADEouJ2xNS/Vq+W5EuuewBdOrvATvljZTxHWZSTYr2sTjTHpGvucaGAt67S2akw==}
-
   '@spz-loader/core@0.1.0':
     resolution: {integrity: sha512-atqn/DLy0xNkqRgz3l/5CD12y1M44JdjTmAFQYDKvzf0pIyj+NlJ/PeCRlSJQfXmZ2JndNOCpcGOFVldANf/EA==}
     engines: {node: '>=16', pnpm: '>=8'}
@@ -1269,10 +1150,6 @@ packages:
   '@supercharge/promise-pool@3.2.0':
     resolution: {integrity: sha512-pj0cAALblTZBPtMltWOlZTQSLT07jIaFNeM8TWoJD1cQMgDB9mcMlVMoetiB35OzNJpqQ2b+QEtwiR9f20mADg==}
     engines: {node: '>=8'}
-
-  '@tganzhorn/fastify-modular@0.1.16':
-    resolution: {integrity: sha512-GuQqSARJLQWWFzrgdWnW5nQncQaFHyuwoHgtMFaElI3a2kDQBsOQdjvJOZMX0S9syKRk2RjBW/87W0nNgjM6xQ==}
-    hasBin: true
 
   '@tootallnate/once@1.1.2':
     resolution: {integrity: sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==}
@@ -1313,9 +1190,6 @@ packages:
 
   '@types/hashmap@2.3.4':
     resolution: {integrity: sha512-IoFSb7S7cwCM23HcAhUS57DBWPU0dPSF6Wz4M4y0S+B1xgGmM08WOzd1wBldesmZ28jhzRNmXda/FO5uY3tLlw==}
-
-  '@types/lodash.debounce@4.0.9':
-    resolution: {integrity: sha512-Ma5JcgTREwpLRwMM+XwBR7DaWe96nC38uCBDFKZWbNKD+osjVzdpnUSwBcqCptrp16sSOLBAUb50Car5I0TCsQ==}
 
   '@types/lodash@4.17.20':
     resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
@@ -2582,9 +2456,6 @@ packages:
     resolution: {integrity: sha512-IXO6OCs9yg8tMKzfPZ1YmheJbZCiEsnBdcB03l0OcfK9prKnJb96siuHCr5Fl37/yo9DnKU+TLpxzTUspw9shg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  lodash.debounce@4.0.8:
-    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
-
   lodash.defaults@4.2.0:
     resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
 
@@ -2602,9 +2473,6 @@ packages:
 
   lodash.sortby@4.7.0:
     resolution: {integrity: sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==}
-
-  lodash.throttle@4.1.1:
-    resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
 
   lodash.union@4.6.0:
     resolution: {integrity: sha512-c4pB2CdGrGdjMKYLA+XiRDO7Y0PRQbm/Gzg8qMj+QH+pFVAoTp5sBpO0odL3FjoPCGjK96p6qsP+yQoiLoOBcw==}
@@ -3046,10 +2914,6 @@ packages:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
 
-  piscina@5.1.2:
-    resolution: {integrity: sha512-9cE/BTA/xhDiyNUEj6EKWLEQC17fh/24ydYzQwcA7QdYh75K6kzL2GHvxDF5i9rFGtUaaKk7/u4xp07qiKXccQ==}
-    engines: {node: '>=20.x'}
-
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
 
@@ -3216,9 +3080,6 @@ packages:
   redis-parser@3.0.0:
     resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
     engines: {node: '>=4'}
-
-  reflect-metadata@0.2.2:
-    resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
 
   reflect.getprototypeof@1.0.10:
     resolution: {integrity: sha512-00o4I+DVrefhv+nX0ulyi3biSHCPDe+yLv5o/p6d/UVlirijB8E16FtfwSAi4g3tcqrQ4lRAqQSoFEZJehYEcw==}
@@ -3564,10 +3425,6 @@ packages:
   superjson@1.13.3:
     resolution: {integrity: sha512-mJiVjfd2vokfDxsQPOwJ/PtanO87LhpYY88ubI5dUB1Ab58Txbyje3+jpm+/83R/fevaq/107NNhtYBLuoTrFg==}
     engines: {node: '>=10'}
-
-  superjson@2.2.2:
-    resolution: {integrity: sha512-5JRxVqC8I8NuOUjzBbvVJAKNM8qoVuH0O77h4WInc/qC2q5IreqKxYwgkga3PfA22OayK2ikceb/B26dztPl+Q==}
-    engines: {node: '>=16'}
 
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
@@ -4109,20 +3966,6 @@ snapshots:
       fast-xml-parser: 5.2.5
       tslib: 2.8.1
 
-  '@azure/data-tables@13.3.1':
-    dependencies:
-      '@azure/core-auth': 1.9.0
-      '@azure/core-client': 1.9.4
-      '@azure/core-paging': 1.6.2
-      '@azure/core-rest-pipeline': 1.21.0
-      '@azure/core-tracing': 1.2.0
-      '@azure/core-util': 1.12.0
-      '@azure/core-xml': 1.4.5
-      '@azure/logger': 1.2.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - supports-color
-
   '@azure/logger@1.2.0':
     dependencies:
       '@typespec/ts-http-runtime': 0.2.3
@@ -4144,22 +3987,6 @@ snapshots:
       '@azure/core-xml': 1.4.5
       '@azure/logger': 1.2.0
       events: 3.3.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - supports-color
-
-  '@azure/storage-queue@12.26.0':
-    dependencies:
-      '@azure/abort-controller': 2.1.2
-      '@azure/core-auth': 1.9.0
-      '@azure/core-client': 1.9.4
-      '@azure/core-http-compat': 2.3.0
-      '@azure/core-paging': 1.6.2
-      '@azure/core-rest-pipeline': 1.21.0
-      '@azure/core-tracing': 1.2.0
-      '@azure/core-util': 1.12.0
-      '@azure/core-xml': 1.4.5
-      '@azure/logger': 1.2.0
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
@@ -4254,7 +4081,7 @@ snapshots:
 
   '@chevrotain/utils@10.4.2': {}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.1(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)':
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.2(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)':
     dependencies:
       3d-tiles-tools: 0.5.0
       '@gltf-transform/core': 4.2.0
@@ -4339,6 +4166,12 @@ snapshots:
       yauzl: 3.2.0
     transitivePeerDependencies:
       - supports-color
+
+  '@csi-foxbyte/prisma-mssql-realtime-extension@0.0.3(@prisma/client@6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3))(rxjs-for-await@1.0.0(rxjs@7.8.2))(rxjs@7.8.2)':
+    dependencies:
+      '@prisma/client': 6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3)
+      rxjs: 7.8.2
+      rxjs-for-await: 1.0.0(rxjs@7.8.2)
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 
@@ -4834,74 +4667,6 @@ snapshots:
   '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
     optional: true
 
-  '@napi-rs/nice-android-arm-eabi@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-android-arm64@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-darwin-arm64@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-darwin-x64@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-freebsd-x64@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-arm-gnueabihf@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-arm64-gnu@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-arm64-musl@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-ppc64-gnu@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-riscv64-gnu@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-s390x-gnu@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-x64-gnu@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-linux-x64-musl@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-win32-arm64-msvc@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-win32-ia32-msvc@1.0.4':
-    optional: true
-
-  '@napi-rs/nice-win32-x64-msvc@1.0.4':
-    optional: true
-
-  '@napi-rs/nice@1.0.4':
-    optionalDependencies:
-      '@napi-rs/nice-android-arm-eabi': 1.0.4
-      '@napi-rs/nice-android-arm64': 1.0.4
-      '@napi-rs/nice-darwin-arm64': 1.0.4
-      '@napi-rs/nice-darwin-x64': 1.0.4
-      '@napi-rs/nice-freebsd-x64': 1.0.4
-      '@napi-rs/nice-linux-arm-gnueabihf': 1.0.4
-      '@napi-rs/nice-linux-arm64-gnu': 1.0.4
-      '@napi-rs/nice-linux-arm64-musl': 1.0.4
-      '@napi-rs/nice-linux-ppc64-gnu': 1.0.4
-      '@napi-rs/nice-linux-riscv64-gnu': 1.0.4
-      '@napi-rs/nice-linux-s390x-gnu': 1.0.4
-      '@napi-rs/nice-linux-x64-gnu': 1.0.4
-      '@napi-rs/nice-linux-x64-musl': 1.0.4
-      '@napi-rs/nice-win32-arm64-msvc': 1.0.4
-      '@napi-rs/nice-win32-ia32-msvc': 1.0.4
-      '@napi-rs/nice-win32-x64-msvc': 1.0.4
-    optional: true
-
   '@noble/hashes@1.8.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
@@ -5127,22 +4892,9 @@ snapshots:
 
   '@sinclair/typebox@0.34.33': {}
 
-  '@sinclair/typebox@0.34.37': {}
-
   '@spz-loader/core@0.1.0': {}
 
   '@supercharge/promise-pool@3.2.0': {}
-
-  '@tganzhorn/fastify-modular@0.1.16':
-    dependencies:
-      '@sinclair/typebox': 0.34.37
-      bullmq: 5.56.4
-      cache-manager: 7.0.1
-      commander: 14.0.0
-      handlebars: 4.7.8
-      reflect-metadata: 0.2.2
-    transitivePeerDependencies:
-      - supports-color
 
   '@tootallnate/once@1.1.2':
     optional: true
@@ -5188,10 +4940,6 @@ snapshots:
   '@types/geojson@7946.0.16': {}
 
   '@types/hashmap@2.3.4': {}
-
-  '@types/lodash.debounce@4.0.9':
-    dependencies:
-      '@types/lodash': 4.17.20
 
   '@types/lodash@4.17.20': {}
 
@@ -6691,8 +6439,6 @@ snapshots:
 
   load-tsconfig@0.2.5: {}
 
-  lodash.debounce@4.0.8: {}
-
   lodash.defaults@4.2.0: {}
 
   lodash.difference@4.5.0: {}
@@ -6704,8 +6450,6 @@ snapshots:
   lodash.isplainobject@4.0.6: {}
 
   lodash.sortby@4.7.0: {}
-
-  lodash.throttle@4.1.1: {}
 
   lodash.union@4.6.0: {}
 
@@ -7245,10 +6989,6 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  piscina@5.1.2:
-    optionalDependencies:
-      '@napi-rs/nice': 1.0.4
-
   pkg-types@1.3.1:
     dependencies:
       confbox: 0.1.8
@@ -7424,8 +7164,6 @@ snapshots:
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
-
-  reflect-metadata@0.2.2: {}
 
   reflect.getprototypeof@1.0.10:
     dependencies:
@@ -7899,10 +7637,6 @@ snapshots:
       ts-interface-checker: 0.1.13
 
   superjson@1.13.3:
-    dependencies:
-      copy-anything: 3.0.5
-
-  superjson@2.2.2:
     dependencies:
       copy-anything: 3.0.5
 

@@ -40,9 +40,9 @@ export async function startBuild() {
   await build({
     entryPoints,
     logLevel: "silent",
-    outdir: ".dev",
+    outdir: ".build",
     bundle: false,
-    minify: false,
+    minify: true,
     platform: "node",
     splitting: false,
     treeShaking: true,

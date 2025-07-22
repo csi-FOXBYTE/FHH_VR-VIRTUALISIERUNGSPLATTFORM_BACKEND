@@ -2,18 +2,19 @@ import {
   createWorker,
   QueueContainer,
   WorkerContainer,
-  Job,
 } from "@csi-foxbyte/fastify-toab";
 import { getBlobStorageService } from "../blobStorage.service.js";
+import defaultConnection from "../../connection.js";
+import { Job } from "bullmq";
 
 const deleteBlobWorker = createWorker()
-  .queue("deleteBlob-queue")
+  .queue("{deleteBlob-queue}")
   .job<Job<{ containerName: string; blobName: string }, void>>()
   .options({
     removeOnComplete: { count: 0 },
     removeOnFail: { count: 100 },
   })
-  .connection({})
+  .connection(defaultConnection)
   .processor(async (job, { services }) => {
     const blobStorageService = await getBlobStorageService(services);
 

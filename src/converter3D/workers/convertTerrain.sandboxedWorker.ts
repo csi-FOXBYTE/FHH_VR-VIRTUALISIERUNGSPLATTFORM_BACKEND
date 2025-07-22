@@ -1,14 +1,13 @@
 import "dotenv";
 
 import { generate, preprocess } from "@csi-foxbyte/mesh-dem-to-terrain";
-import { JobProgress } from "bullmq";
 import _ from "lodash";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { injectPinoLogger } from "../../lib/pino.js";
-import type { ConvertTerrainWorkerJob } from "./convertTerrain.worker.js";
-import { getRegistries } from "../../registries.js";
 import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
+import { injectPinoLogger } from "../../lib/pino.js";
+import { getRegistries } from "../../registries.js";
+import type { ConvertTerrainWorkerJob } from "./convertTerrain.worker.js";
 
 async function initializeContainers() {
   const { serviceRegistry, workerRegistry } = await getRegistries();
@@ -28,39 +27,45 @@ export default async function run(
 
   const blobStorageService = await getBlobStorageService(services);
 
-  console.log("Converting Terrain...");
+  job.log("Converting Terrain...");
 
   const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
 
   try {
-    const throttledProgress = _.throttle(async (progress: JobProgress) => {
+    const throttledProgress = _.throttle(async (progress: number) => {
       await job.updateProgress(progress);
-    }, 1_000);
+      job.log(progress);
+    }, 5_000);
 
     const zipPath = path.join(rootPath, job.data.blobName);
 
     await mkdir(rootPath, { recursive: true });
 
+    job.log("Downloading zip...");
     await blobStorageService.downloadToFile(
       job.data.containerName,
       job.data.blobName,
       zipPath
     );
+    job.log("Downloaded zip.");
 
     const preprocessedDir = path.join(rootPath, "preprocessed");
 
     await mkdir(preprocessedDir, { recursive: true });
 
+    job.log("Preprocessing...");
     await preprocess(
       zipPath,
       preprocessedDir,
-      (progress) => throttledProgress(progress * 0.5),
+      (progress) => throttledProgress(progress * 0.5 * 100),
       job.data.srcSRS
     );
+    job.log("Preprocessed.");
 
+    job.log("Generating...");
     await generate(
       preprocessedDir,
-      (progress) => throttledProgress(progress * 0.5 + 0.5),
+      (progress) => throttledProgress((progress * 0.5 + 0.5) * 100),
       {
         writeFile: async (_, file, terrainTile) => {
           if (terrainTile) {
@@ -84,6 +89,7 @@ export default async function run(
         },
       }
     );
+    job.log("Generated.");
 
     try {
       await blobStorageService.delete(
@@ -92,8 +98,10 @@ export default async function run(
       );
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
+    job.log("Finished.");
+    job.updateProgress(100);
   } catch (e) {
-    console.error(e);
+    job.log(e);
     try {
       await blobStorageService.delete(
         job.data.containerName,

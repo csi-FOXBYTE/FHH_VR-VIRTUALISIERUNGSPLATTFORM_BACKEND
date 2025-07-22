@@ -8,6 +8,7 @@ import {
   uploadProjectModelRequestDTO,
   uploadProjectModelResponseDTO,
   uploadTerrainRequestDTO,
+  uploadTerrainResponseDTO,
 } from "./converter3D.dto.js";
 import { getConverter3DService } from "./converter3D.service.js";
 import { authMiddleware } from "../auth/auth.middleware.js";
@@ -94,6 +95,7 @@ converter3DController
 converter3DController
   .addRoute("POST", "/uploadTerrain")
   .body(uploadTerrainRequestDTO)
+  .output(uploadTerrainResponseDTO)
   .handler(
     async ({ request, services }) => {
       const converter3DService = await getConverter3DService(services);

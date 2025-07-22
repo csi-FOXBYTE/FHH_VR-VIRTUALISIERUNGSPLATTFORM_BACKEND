@@ -41,122 +41,131 @@ Logger.DEFAULT_INSTANCE = new Logger(Logger.Verbosity.SILENT);
 export default async function run(
   job: ConvertProjectModelWorkerJob
 ): Promise<ConvertProjectModelWorkerJob["returnValue"]> {
-  const { services } = await initializeContainers();
-
-  const blobStorageService = await getBlobStorageService(services);
-
+  console.log("CONVERTING PROJECT MODEL")
   try {
-    await job.updateProgress(0);
+    const { services } = await initializeContainers();
 
-    const file = await blobStorageService.downloadToBuffer(
-      job.data.containerName,
-      job.data.blobName
-    );
+    const blobStorageService = await getBlobStorageService(services);
 
-    await job.updateProgress(0.25);
+    try {
+      await job.updateProgress(0);
 
-    const extension = job.data.fileName.split(".").slice(-1)[0];
+      const file = await blobStorageService.downloadToBuffer(
+        job.data.containerName,
+        job.data.blobName
+      );
 
-    const io = new NodeIO()
-      .registerExtensions([...ALL_EXTENSIONS])
-      .registerDependencies({
-        "draco3d.decoder": await draco3d.createDecoderModule(),
-        "draco3d.encoder": await draco3d.createEncoderModule(),
-        "meshopt.decoder": MeshoptDecoder,
-        "meshopt.encoder": MeshoptEncoder,
-      });
+      await job.updateProgress(0.25);
 
-    let document: Document | null = null;
+      const extension = job.data.fileName.split(".").slice(-1)[0];
 
-    switch (extension) {
-      case "glb": {
-        document = await io.readBinary(file);
-        break;
-      }
-      case "ifc": {
-        const { convertIfcBuffer } = await import("../../lib/IfcConvert.js");
-        document = await io.readBinary(await convertIfcBuffer(file, "glb"));
-        break;
-      }
-      case "fbx":
-      case "obj":
-      case "dae":
-      case "xml":
-      case "blend":
-      case "stl":
-      case "dxf":
-      case "3ds":
-      case "gltf":
-      case "ter":
-        const { convertWithAssimpJs } = await import(
-          "../../lib/AssimpJsConvert.js"
-        );
-        document = await io.readBinary(
-          await convertWithAssimpJs(extension, file)
-        );
-        break;
-      default:
-        throw new Error("Filetype is unsupported!");
-    }
+      const io = new NodeIO()
+        .registerExtensions([...ALL_EXTENSIONS])
+        .registerDependencies({
+          "draco3d.decoder": await draco3d.createDecoderModule(),
+          "draco3d.encoder": await draco3d.createEncoderModule(),
+          "meshopt.decoder": MeshoptDecoder,
+          "meshopt.encoder": MeshoptEncoder,
+        });
 
-    await job.updateProgress(0.75);
+      let document: Document | null = null;
 
-    let modelMatrix = new Matrix4();
-
-    await document.transform(
-      dedup(),
-      flatten(),
-      prune(),
-      weld({}),
-      join({}),
-      simplify({
-        simplifier: MeshoptSimplifier,
-        ratio: 0.0,
-        error: 0.001,
-        cleanup: true,
-        lockBorder: false,
-      }),
-      draco({}),
-      textureCompress({
-        encoder: sharp,
-        effort: 95,
-        quality: 99,
-        targetFormat: "png",
-      }),
-      (document) => {
-        let offset: null | vec3 = null;
-
-        for (const node of document.getRoot().listNodes()) {
-          const translation = node.getTranslation();
-
-          if (!offset) offset = [...translation];
-
-          node.setTranslation([
-            translation[0] - offset[0],
-            translation[1] - offset[1],
-            translation[2] - offset[2],
-          ]);
+      switch (extension) {
+        case "glb": {
+          document = await io.readBinary(file);
+          break;
         }
+        case "ifc": {
+          const { convertIfcBuffer } = await import("../../lib/IfcConvert.js");
+          document = await io.readBinary(await convertIfcBuffer(file, "glb"));
+          break;
+        }
+        case "fbx":
+        case "obj":
+        case "dae":
+        case "xml":
+        case "blend":
+        case "stl":
+        case "dxf":
+        case "3ds":
+        case "gltf":
+        case "ter":
+          const { convertWithAssimpJs } = await import(
+            "../../lib/AssimpJsConvert.js"
+          );
+          document = await io.readBinary(
+            await convertWithAssimpJs(extension, file)
+          );
+          break;
+        default:
+          throw new Error("Filetype is unsupported!");
       }
-    );
 
-    // overwrite blob
-    await blobStorageService.uploadData(
-      Buffer.from(await io.writeBinary(document)),
-      job.data.containerName,
-      job.data.blobName
-    );
+      await job.updateProgress(0.75);
 
-    await job.updateProgress(1);
+      let modelMatrix = new Matrix4();
 
-    return {
-      collectableBlobName: job.data.blobName,
-      modelMatrix: modelMatrix.toArray(),
-      secret: job.data.secret,
-    };
+      await document.transform(
+        dedup(),
+        flatten(),
+        prune(),
+        weld({}),
+        join({}),
+        simplify({
+          simplifier: MeshoptSimplifier,
+          ratio: 0.0,
+          error: 0.001,
+          cleanup: true,
+          lockBorder: false,
+        }),
+        draco({}),
+        textureCompress({
+          encoder: sharp,
+          effort: 95,
+          quality: 99,
+          targetFormat: "png",
+        }),
+        (document) => {
+          let offset: null | vec3 = null;
+
+          for (const node of document.getRoot().listNodes()) {
+            const translation = node.getTranslation();
+
+            if (!offset) offset = [...translation];
+
+            node.setTranslation([
+              translation[0] - offset[0],
+              translation[1] - offset[1],
+              translation[2] - offset[2],
+            ]);
+          }
+        }
+      );
+
+      // overwrite blob
+      await blobStorageService.uploadData(
+        Buffer.from(await io.writeBinary(document)),
+        job.data.containerName,
+        job.data.blobName
+      );
+
+      await job.updateProgress(1);
+
+      return {
+        collectableBlobName: job.data.blobName,
+        modelMatrix: modelMatrix.toArray(),
+        secret: job.data.secret,
+      };
+    } catch (e) {
+      console.error(e);
+      await blobStorageService.delete(
+        job.data.containerName,
+        job.data.blobName
+      );
+      throw e;
+    }
   } catch (e) {
     console.error(e);
-    await blobStorageService.delete(job.data.containerName, job.data.blobName);
     throw e;
   }
 }

@@ -11,7 +11,7 @@ const authService = createService(
   "auth",
   async ({ request, services }) => {
     const cache = await getCacheService(services);
-    
+
     async function fetchSession({
       sessionToken,
       userId,
@@ -51,7 +51,8 @@ const authService = createService(
         });
 
         return { user, sessionToken };
-      } catch {
+      } catch (e) {
+        console.error(e);
         return null;
       }
     }
@@ -76,9 +77,9 @@ const authService = createService(
           return await cache.wrap(
             Buffer.from(
               await crypto.subtle.digest("SHA-512", Buffer.from(tokenRaw))
-            ).toString("base64"), // dont save the token just hash it and save that
+            ).toString("base64"), // dont save the raw token just hash it and save that
             async () => await fetchSession(payload),
-            60_000 // cache for 1 minute
+            30_000 // cache for 30 seconds
           );
         } catch (e) {
           console.error(e);

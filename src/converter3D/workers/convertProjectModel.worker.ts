@@ -9,7 +9,7 @@ import { getConverter3DService } from "../converter3D.service.js";
 import defaultConnection from "../../connection.js";
 
 const convertProjectModelWorker = createWorker()
-  .queue("convertProjectModel-queue")
+  .queue("{convertProjectModel-queue}")
   .sandboxedJob<
     SandboxedJob<
       {
@@ -47,6 +47,7 @@ const convertProjectModelWorker = createWorker()
     useWorkerThreads: true,
     removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
+    stalledInterval: 120_000,
   })
   .connection(defaultConnection)
   .processor(
