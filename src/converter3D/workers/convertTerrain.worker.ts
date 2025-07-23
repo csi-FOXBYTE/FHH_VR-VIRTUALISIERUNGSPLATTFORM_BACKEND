@@ -14,6 +14,7 @@ const convertTerrainWorker = createWorker()
       {
         blobName: string;
         srcSRS: string;
+        id: string;
         containerName: string;
         localProcessorFolder: string;
       },
@@ -21,46 +22,57 @@ const convertTerrainWorker = createWorker()
     >
   >()
   .on("active", async ({ services }, job) => {
-    const converter3DService = await getConverter3DService(services);
+    try {
+      console.log(job);
+      const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
-      0,
-      "ACTIVE"
-    );
+      await converter3DService.updateBaseLayerStatus(job.id!, 0, "ACTIVE");
+    } catch (e) {
+      console.error(e);
+    }
   })
   .on("progress", async ({ services }, job) => {
-    const converter3DService = await getConverter3DService(services);
+    try {
+      console.log(job);
+      const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
-      +job.progress.valueOf(),
-      "ACTIVE"
-    );
+      await converter3DService.updateBaseLayerStatus(
+        job.id!,
+        +job.progress.valueOf(),
+        "ACTIVE"
+      );
+    } catch (e) {
+      console.error(e);
+    }
   })
   .on("completed", async ({ services }, job) => {
-    const converter3DService = await getConverter3DService(services);
+    try {
+      console.log(job);
+      const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
-      1,
-      "COMPLETED"
-    );
+      await converter3DService.updateBaseLayerStatus(job.id!, 1, "COMPLETED");
+    } catch (e) {
+      console.error(e);
+    }
   })
   .on("failed", async ({ services }, job) => {
-    if (!job) return;
+    try {
+      console.log(job);
+      if (!job) return;
 
-    const converter3DService = await getConverter3DService(services);
+      const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
-      +job.progress.valueOf(),
-      "FAILED"
-    );
+      await converter3DService.updateBaseLayerStatus(
+        job.id!,
+        +job.progress.valueOf(),
+        "FAILED"
+      );
+    } catch (e) {
+      console.error(e);
+    }
   })
   .options({
     concurrency: 1,
-    useWorkerThreads: true,
     removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
     stalledInterval: 120_000,

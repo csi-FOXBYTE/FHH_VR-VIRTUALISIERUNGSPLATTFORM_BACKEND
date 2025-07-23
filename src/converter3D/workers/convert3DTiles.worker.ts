@@ -14,6 +14,7 @@ const convert3DTilesWorker = createWorker()
       {
         blobName: string;
         containerName: string;
+        id: string;
         srcSRS: string;
         localProcessorFolder: string;
       },
@@ -24,7 +25,7 @@ const convert3DTilesWorker = createWorker()
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
+      job.id!,
       0,
       "ACTIVE"
     );
@@ -33,16 +34,17 @@ const convert3DTilesWorker = createWorker()
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
+      job.id!,
       +job.progress.valueOf(),
       "ACTIVE"
     );
   })
   .on("completed", async ({ services }, job) => {
+    console.log(job.progress);
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
+      job.id!,
       1,
       "COMPLETED"
     );
@@ -53,15 +55,14 @@ const convert3DTilesWorker = createWorker()
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.data.blobName,
+      job.id!,
       +job.progress.valueOf(),
       "FAILED"
     );
   })
   .options({
     concurrency: 1,
-    useWorkerThreads: true,
-    removeOnComplete: { count: 100, age: 3600 },
+    removeOnComplete: { count: 100, age: 24 * 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
     stalledInterval: 120_000,
   })

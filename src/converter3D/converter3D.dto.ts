@@ -1,25 +1,28 @@
 import { Type, Static } from "@sinclair/typebox";
 
-export const uploadTerrainRequestDTO = Type.Object({
+export const convertTerrainRequestDTO = Type.Object({
   srcSRS: Type.String(),
   name: Type.String(),
-  file: Type.String({ format: "binary" }),
+  blobRef: Type.String(),
 });
-export type UploadTerrainRequestDTO = Static<typeof uploadTerrainRequestDTO>;
+export type ConvertTerrainRequestDTO = Static<typeof convertTerrainRequestDTO>;
 
-export const uploadTerrainResponseDTO = Type.Object({
-  srcSRS: Type.String(),
-  name: Type.String(),
-  file: Type.String({ format: "binary" }),
+export const convertTerrainResponseDTO = Type.Object({
+  jobId: Type.String(),
 });
-export type UploadTerrainResponseDTO = Static<typeof uploadTerrainResponseDTO>;
+export type ConvertTerrainResponseDTO = Static<typeof convertTerrainResponseDTO>;
 
-export const upload3DTileRequestDTO = Type.Object({
+export const convert3DTileRequestDTO = Type.Object({
   srcSRS: Type.String(),
   name: Type.String(),
-  file: Type.String({ format: "binary" }),
+  blobRef: Type.String(),
 });
-export type Upload3DTileRequestDTO = Static<typeof uploadTerrainRequestDTO>;
+export type Convert3DTileRequestDTO = Static<typeof convertTerrainRequestDTO>;
+
+export const convert3DTileResponseDTO = Type.Object({
+  jobId: Type.String(),
+});
+export type Convert3DTileResponseDTO = Static<typeof convertTerrainRequestDTO>;
 
 export const uploadProjectModelRequestDTO = Type.Object({
   epsgCode: Type.String(),

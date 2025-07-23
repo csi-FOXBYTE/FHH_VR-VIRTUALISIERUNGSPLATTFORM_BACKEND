@@ -35,7 +35,7 @@ export default async function run(
   const blobStorageService = await getBlobStorageService(services);
 
   job.log("Initialized worker.");
-  const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
+  const rootPath = path.join(job.data.localProcessorFolder, job.data.id);
 
   const throttledProgress = _.throttle(async (progress: number) => {
     await job.updateProgress(progress);
@@ -43,7 +43,7 @@ export default async function run(
   }, 5_000);
 
   try {
-    const zipPath = path.join(rootPath, job.data.blobName + ".zip");
+    const zipPath = path.join(rootPath, job.data.id + ".zip");
 
     try {
       await rm(rootPath, { force: true, recursive: true });
@@ -100,7 +100,7 @@ export default async function run(
         await throttledProgress((0.45 + progress * 0.3) * 100);
       },
       {
-        threadCount: 4,
+        threadCount: 12,
       }
     );
     job.log("Generated 3d tiles from database.");
@@ -117,7 +117,7 @@ export default async function run(
 
       await blobStorageService.uploadStream(
         readStream,
-        `tileset-${job.data.blobName}`,
+        `tileset-${job.data.id}`,
         `${file}`
       );
 

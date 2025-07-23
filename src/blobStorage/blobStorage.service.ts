@@ -1,6 +1,9 @@
 import {
+  BlobSASPermissions,
   BlobServiceClient,
   BlockBlobUploadStreamOptions,
+  generateBlobSASQueryParameters,
+  StorageSharedKeyCredential,
 } from "@azure/storage-blob";
 import {
   createService,
@@ -9,6 +12,7 @@ import {
 } from "@csi-foxbyte/fastify-toab";
 import { Readable } from "stream";
 import { getDeleteBlobWorkerQueue } from "./workers/deleteBlob.worker.js";
+import dayjs from "dayjs";
 
 const blobStorageService = createService("blobStorage", async ({ queues }) => {
   const deleteBlobQueue = getDeleteBlobWorkerQueue(queues);
@@ -58,6 +62,33 @@ const blobStorageService = createService("blobStorage", async ({ queues }) => {
       const response = await client.uploadData(data);
 
       return { blobName, ...response };
+    },
+
+    async getUploadSASUrl(containerName: string) {
+      const blobName = await _createBlobName(containerName);
+
+      const client = await _getClient(containerName, blobName);
+
+      const permissions = new BlobSASPermissions();
+      permissions.create = true;
+      permissions.write = true;
+      permissions.add = true;
+      permissions.read = true;
+
+      const sasToken = generateBlobSASQueryParameters(
+        {
+          containerName,
+          blobName,
+          permissions,
+          expiresOn: dayjs().add(2, "hours").toDate(),
+        },
+        new StorageSharedKeyCredential(
+          blobServiceClient.credential.accountName,
+          blobServiceClient.credential.accountKey
+        )
+      );
+
+      return `${client.url}?${sasToken.toString()}`;
     },
 
     async uploadStream(

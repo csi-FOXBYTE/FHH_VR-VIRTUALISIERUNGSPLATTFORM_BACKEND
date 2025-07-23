@@ -44,8 +44,6 @@ const convertProjectModelWorker = createWorker()
   })
   .options({
     concurrency: 2,
-    useWorkerThreads: true,
-    removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
     stalledInterval: 120_000,
   })

@@ -3,11 +3,16 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
-import { prisma } from "../prisma/index.js";
 import { enhance, Enhanced } from "@zenstackhq/runtime";
 import { getAuthService } from "../auth/auth.service.js";
+import { PrismaClient } from "@prisma/client";
+import realtimeExtension from "./extensions/realtimeExtension.js";
 
 const dbService = createService("db", async ({ services }) => {
+  const prisma = new PrismaClient().$extends(
+    realtimeExtension({ intervalMs: 5_000 })
+  );
+
   return {
     rawClient: prisma,
     /**

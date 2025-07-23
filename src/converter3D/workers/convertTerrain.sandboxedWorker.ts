@@ -29,7 +29,7 @@ export default async function run(
 
   job.log("Converting Terrain...");
 
-  const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
+  const rootPath = path.join(job.data.localProcessorFolder, job.data.id);
 
   try {
     const throttledProgress = _.throttle(async (progress: number) => {
@@ -37,7 +37,7 @@ export default async function run(
       job.log(progress);
     }, 5_000);
 
-    const zipPath = path.join(rootPath, job.data.blobName);
+    const zipPath = path.join(rootPath, job.data.id);
 
     await mkdir(rootPath, { recursive: true });
 
@@ -75,7 +75,7 @@ export default async function run(
             });
             await blobStorageService.uploadData(
               Buffer.from(file),
-              `terrain-${job.data.blobName}`,
+              `terrain-${job.data.id}`,
               `${terrainTile.zoom}/${terrainTile.x}/${terrainTile.y}.terrain`
             );
             return;
@@ -83,7 +83,7 @@ export default async function run(
 
           await blobStorageService.uploadData(
             Buffer.from(file),
-            `terrain-${job.data.blobName}`,
+            `terrain-${job.data.id}`,
             `layer.json`
           );
         },

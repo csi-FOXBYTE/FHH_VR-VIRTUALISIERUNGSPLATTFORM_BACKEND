@@ -1,22 +1,22 @@
-import { Observable, merge, interval, map } from "rxjs";
-import { eachValueFrom } from "rxjs-for-await";
+import { Observable, fromEvent, takeUntil } from 'rxjs';
+import { eachValueFrom } from 'rxjs-for-await';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function* eachValueFromAbortable<O extends Observable<any>>(
   observable: O,
-  signal?: AbortSignal
+  signal: AbortSignal | undefined,
 ): AsyncIterable<O extends Observable<infer D> ? D : never> {
-  const pingObject = {};
+  let safe$: O;
 
-  const abortableObserver = merge(
-    observable,
-    interval(5_000).pipe(map(() => pingObject))
-  );
+  if (signal) {
+    const abort$ = fromEvent(signal, 'abort');
 
-  for await (const value of eachValueFrom(abortableObserver as O)) {
-    if (signal?.aborted) break;
+    safe$ = observable.pipe(takeUntil(abort$)) as O;
+  } else {
+    safe$ = observable;
+  }
 
-    if (value === pingObject) continue;
-
+  for await (const value of eachValueFrom(safe$)) {
     yield value;
   }
 }

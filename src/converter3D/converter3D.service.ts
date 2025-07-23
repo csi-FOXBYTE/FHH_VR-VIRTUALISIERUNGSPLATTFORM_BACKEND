@@ -8,7 +8,6 @@ import { getConvertProjectModelWorkerQueue } from "./workers/convertProjectModel
 import { getConvertTerrainWorkerQueue } from "./workers/convertTerrain.worker.js";
 import { getBlobStorageService } from "../blobStorage/blobStorage.service.js";
 import { Readable } from "stream";
-import { BlockBlobUploadStreamOptions } from "@azure/storage-blob";
 import { getConfigurationService } from "../configuration/configuration.service.js";
 import { getDbService } from "../db/db.service.js";
 import { getAuthService } from "../auth/auth.service.js";
@@ -104,16 +103,13 @@ const converter3DService = createService(
       },
     };
 
-    const terrainUploadContainerName = "converter-terrain-upload";
-
     const terrain = {
-      async uploadTerrain(
-        stream: Readable,
-        name: string,
-        srcSRS: string,
-        onProgress?: BlockBlobUploadStreamOptions["onProgress"]
-      ) {
+      async convertTerrain(blobRef: string, name: string, srcSRS: string) {
         const authService = await getAuthService(services);
+
+        const blobUrl = new URL(blobRef);
+
+        const [, containerName, blobName] = blobUrl.pathname.split("/");
 
         const { id } = await dbService.rawClient.baseLayer.create({
           data: {
@@ -129,17 +125,11 @@ const converter3DService = createService(
           },
         });
 
-        await blobStorageService.uploadStream(
-          stream,
-          terrainUploadContainerName,
-          id,
-          onProgress
-        );
-
         const job = await terrainConverterQueue.add(id, {
-          blobName: id,
+          blobName,
+          id,
           srcSRS,
-          containerName: terrainUploadContainerName,
+          containerName,
           localProcessorFolder: (
             await configurationService.getConfiguration()
           ).localProcessorFolder,
@@ -161,16 +151,13 @@ const converter3DService = createService(
       },
     };
 
-    const tile3DUploadContainerName = "converter-tile-3d-upload";
-
     const tile3D = {
-      async upload3DTile(
-        stream: Readable,
-        name: string,
-        srcSRS: string,
-        onProgress?: BlockBlobUploadStreamOptions["onProgress"]
-      ) {
+      async convert3DTile(blobRef: string, name: string, srcSRS: string) {
         const authService = await getAuthService(services);
+
+        const blobUrl = new URL(blobRef);
+
+        const [, containerName, blobName] = blobUrl.pathname.split("/");
 
         const { id } = await dbService.rawClient.baseLayer.create({
           data: {
@@ -186,21 +173,18 @@ const converter3DService = createService(
           },
         });
 
-        await blobStorageService.uploadStream(
-          stream,
-          tile3DUploadContainerName,
+        const job = await tile3DConverterQueue.add(
           id,
-          onProgress
+          {
+            blobName,
+            srcSRS,
+            id,
+            containerName,
+            localProcessorFolder: (
+              await configurationService.getConfiguration()
+            ).localProcessorFolder,
+          },
         );
-
-        const job = await tile3DConverterQueue.add(id, {
-          blobName: id,
-          srcSRS,
-          containerName: tile3DUploadContainerName,
-          localProcessorFolder: (
-            await configurationService.getConfiguration()
-          ).localProcessorFolder,
-        });
 
         return { jobId: job.id! };
       },

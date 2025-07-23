@@ -34,7 +34,7 @@ fastify.register(fastifyCors, {});
 
 fastify.register(fastifyMultipart, {
   limits: {
-    fileSize: 50_000_000_000, // 50 gb
+    fileSize: 50_000_000_000_000_000, // 50 gb
     files: 10,
   },
 });
@@ -78,7 +78,7 @@ fastify.register(fastifySwaggerUi, {
   transformSpecificationClone: true,
 });
 
-const registries = await getRegistries();
+const registries = await getRegistries(process.env.WORKER_DISABLED === "true");
 
 fastify.register(fastifyToab, {
   async getRegistries() {

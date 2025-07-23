@@ -94,4 +94,4 @@ COPY --from=build --chown=nodeuser:nodejs /app/package.json ./
 
 EXPOSE 3000
 
-CMD ["node", ".build/index.js"]
+CMD ["node", "--expose-gc", ".build/index.js"]

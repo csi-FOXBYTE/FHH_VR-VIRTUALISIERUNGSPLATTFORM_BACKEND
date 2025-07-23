@@ -22,6 +22,7 @@ import { convertTerrainWorker } from "./converter3D/workers/convertTerrain.worke
 import { converter3DController } from "./converter3D/converter3D.controller.js";
 import { eventsController } from "./events/events.controller.js";
 import { projectController } from "./project/project.controller.js";
+import { statsController } from "./stats/stats.controller.js";
 
 export async function getRegistries(dontInitializeWorkers?: boolean) {
   let workerRegistryRef: { current: WorkerRegistry | null } = {
@@ -38,21 +39,17 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   serviceRegistry.register(eventsService);
 
   const workerRegistry = new WorkerRegistry(serviceRegistry);
-  if (process.env.WORKER_DISABLED !== "true") {
-    await workerRegistry.register(deleteBlobWorker, dontInitializeWorkers);
-    await workerRegistry.register(convert3DTilesWorker, dontInitializeWorkers);
-    await workerRegistry.register(
-      convertProjectModelWorker,
-      dontInitializeWorkers
-    );
-    await workerRegistry.register(convertTerrainWorker, dontInitializeWorkers);
-  }
+  await workerRegistry.register(deleteBlobWorker, dontInitializeWorkers);
+  await workerRegistry.register(convert3DTilesWorker, dontInitializeWorkers);
+  await workerRegistry.register(convertProjectModelWorker, dontInitializeWorkers);
+  await workerRegistry.register(convertTerrainWorker, dontInitializeWorkers);
   workerRegistryRef.current = workerRegistry;
 
   const controllerRegistry = new ControllerRegistry(serviceRegistry);
   controllerRegistry.register(converter3DController);
   controllerRegistry.register(eventsController);
   controllerRegistry.register(projectController);
+  controllerRegistry.register(statsController);
 
   return { controllerRegistry, serviceRegistry, workerRegistry };
 }
