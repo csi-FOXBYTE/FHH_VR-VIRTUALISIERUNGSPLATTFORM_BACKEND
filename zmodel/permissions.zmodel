@@ -16,24 +16,28 @@ model Group extends Base, AdminPrivilege {
 
     defaultFor        String[]
 
-    @@deny('delete,update', isAdminGroup == true)
+    @@deny('delete', isAdminGroup == true)
+
+    @@allow('read', true)
 }
 
 model Role extends Base, AdminPrivilege {
     assignedGroups      Group[]
-    assignedPermissions Permission[]
-    name                String       @unique
+    assignedPermissions PERMISSIONS[]
+    name                String        @unique
 
-    isAdminRole         Boolean      @default(false) @deny('update', true)
+    isAdminRole         Boolean       @default(false) @deny('update', true)
 
-    @@deny('delete,update', isAdminRole == true)
+    @@deny('delete', isAdminRole == true)
+
+    @@allow('read', true)
 }
 
-/// This is readonly
-model Permission extends Base, AdminPrivilege {
-    assignedRoles Role[]
-    name          String @unique
-
-    @@deny('delete', true)
-    @@deny('update', true)
+enum PERMISSIONS {
+    BASE_LAYER_OWNER
+    EVENT_OWNER
+    PROJECT_OWNER
+    CONFIGURATION_ADMINISTRATOR
+    DATA_MANAGEMENT_ADMINISTRATOR
+    USER_ADMINISTRATOR
 }

@@ -8,6 +8,8 @@ import {
   getTranslationService,
 } from "../@internals/index.js";
 import ics from "ics";
+import ejs from "ejs";
+import { readFile } from "fs/promises";
 
 const eventsService = createService(
   "events",
@@ -126,69 +128,30 @@ const eventsService = createService(
           },
         });
 
+        return; // TODO: Implement email
+
         const translator = translationService.getTranslator("de");
         const formatter = translationService.getFormatter("de");
 
+        const templateFile = await readFile("../templates/mail-invitation.ejs");
+
         await notificationService.notify(
           created.attendees.map(({ user }) => {
-            const mailContent = `
-  <p>${translator("notifications.event-invitation-greeting", {
-    userName: user.name ?? user.email,
-  })}</p>
-  <p>${translator("notifications.event-invitation-intro", {
-    eventTitle: `<strong>${title}</strong>`,
-  })}</p>
-  <p><strong>${translator(
-    "notifications.event-invitation-datetime-label"
-  )}</strong><br>${translator("notifications.event-invitation-datetime", {
-              relativeTime: formatter.dateTimeRange(
-                new Date(startTime),
-                new Date(endTime),
-                { dateStyle: "short" }
-              ),
-            })}</p>
-  <p>${translator("notifications.event-invitation-online-info")}</p>
-  <p>${translator("notifications.event-invitation-attachment-info")}</p>
-  <p>${translator("notifications.event-invitation-outro")}</p>
-  <p>${translator("notifications.event-invitation-signoff")}<br>${translator(
-              "notifications.event-invitation-team"
-            )}</p>
-`;
-
-            const description = `${translator(
-              "notifications.event-invitation-greeting",
-              {
-                userName: user.name ?? user.email,
-              }
-            )}
-
-${translator("notifications.event-invitation-intro", {
-  eventTitle: title,
-})}
-
- ${translator("notifications.event-invitation-datetime-label")} ${translator(
-              "notifications.event-invitation-datetime",
-              {
-                relativeTime: formatter.dateTimeRange(
-                  new Date(startTime),
-                  new Date(endTime),
-                  { dateStyle: "short" }
-                ),
-              }
-            )}
-  ${translator("notifications.event-invitation-online-info")}
-  ${translator("notifications.event-invitation-attachment-info")}
-  ${translator("notifications.event-invitation-outro")}
-  ${translator("notifications.event-invitation-signoff")}${translator(
-              "notifications.event-invitation-team"
-            )}`;
+            const mailContent = ejs.render(templateFile.toString("utf-8"), {
+              t: translator,
+              title,
+              formatter,
+              startTime,
+              endTime,
+              user,
+            });
 
             const event = ics.createEvent({
               start: startTime,
               end: endTime,
               title: title,
               url: "https://fhhvr.foxbyte.de",
-              description: description,
+              description: mailContent,
               htmlContent: mailContent,
               organizer: {
                 email: created.owner?.email,

@@ -7,14 +7,14 @@ abstract model Layer {
   name String
 }
 
-enum LayerType {
+enum LAYER_TYPE {
   TILES3D
   TERRAIN
   IMAGERY
   WMS
 }
 
-enum BaseLayerConversionStatus {
+enum BASE_LAYER_CONVERSION_STATUS {
   ACTIVE
   PENDING
   FAILED
@@ -22,10 +22,10 @@ enum BaseLayerConversionStatus {
 }
 
 model BaseLayer extends Layer, Base, Ownable, AdminPrivilege {
-  type                    LayerType
+  type                    LAYER_TYPE
   visibleForGroups        Group[]
 
-  status                  BaseLayerConversionStatus @default(COMPLETED)
+  status                  BASE_LAYER_CONVERSION_STATUS @default(COMPLETED)
   progress                Float                     @default(0)
 
   sizeGB                  Float
@@ -43,5 +43,5 @@ model BaseLayer extends Layer, Base, Ownable, AdminPrivilege {
 
   @@allow('read', visibleForGroups?[assignedUsers?[id == auth().id]])
 
-  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER_OWNER']]])
+  @@allow('create', auth().assignedGroups?[assignedRoles?[BASE_LAYER_OWNER in assignedPermissions]])
 }

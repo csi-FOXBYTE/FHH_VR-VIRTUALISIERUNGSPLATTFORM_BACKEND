@@ -24,13 +24,28 @@ const userService = createService("user", async ({ services }) => {
 
   return {
     remove,
+    async informInactiveUsersPreRemoval() {
+      const users = await prismaService.user.findMany({
+        where: {
+          sessions: {
+            every: {
+              updatedAt: {
+                lt: dayjs().add(365, "day").subtract(30, "day").toISOString(),
+              },
+            },
+          },
+        },
+      });
+
+      // TODO: implement this
+    },
     async removeInactiveUsers() {
       const users = await prismaService.user.findMany({
         where: {
           sessions: {
             every: {
               updatedAt: {
-                lt: dayjs().add(30, "day").toISOString(),
+                lt: dayjs().add(365, "day").toISOString(),
               },
             },
           },

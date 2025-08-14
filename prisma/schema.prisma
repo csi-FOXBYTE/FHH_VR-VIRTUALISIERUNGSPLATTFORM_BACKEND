@@ -12,33 +12,43 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Languages {
+enum LANGUAGES {
   EN
   DE
 }
 
-enum LayerType {
+/// This is readonly
+enum PERMISSIONS {
+  BASE_LAYER_OWNER
+  EVENT_OWNER
+  PROJECT_OWNER
+  CONFIGURATION_ADMINISTRATOR
+  DATA_MANAGEMENT_ADMINISTRATOR
+  USER_ADMINISTRATOR
+}
+
+enum LAYER_TYPE {
   TILES3D
   TERRAIN
   IMAGERY
   WMS
 }
 
-enum BaseLayerConversionStatus {
+enum BASE_LAYER_CONVERSION_STATUS {
   ACTIVE
   PENDING
   FAILED
   COMPLETED
 }
 
-enum EventStatus {
+enum EVENT_STATUS {
   MISSING_HOST
   ACTIVE
   PLANNED
   END
 }
 
-enum EventAttendeeRoles {
+enum EVENT_ATTENDEE_ROLES {
   GUEST
   MODERATOR
 }
@@ -61,7 +71,7 @@ model User {
   createdVisualAxes VisualAxis[]
   visibleProjects   Project[]       @relation("visibleForUsers")
   assignedGroups    Group[]
-  language          Languages?
+  language          LANGUAGES?
 }
 
 model Account {
@@ -221,7 +231,7 @@ model ExtensionLayer {
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt()
   name                    String
-  type                    LayerType
+  type                    LAYER_TYPE
   project                 Project        @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   projectId               String
   includedInProjectLayers ProjectLayer[]
@@ -242,37 +252,28 @@ model Group {
 }
 
 model Role {
-  id                  String       @id() @default(cuid())
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt()
+  id                  String        @id() @default(cuid())
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt()
   assignedGroups      Group[]
-  assignedPermissions Permission[]
-  name                String       @unique()
-  isAdminRole         Boolean      @default(false)
-}
-
-/// This is readonly
-model Permission {
-  id            String   @id() @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt()
-  assignedRoles Role[]
-  name          String   @unique()
+  assignedPermissions PERMISSIONS[]
+  name                String        @unique()
+  isAdminRole         Boolean       @default(false)
 }
 
 model BaseLayer {
-  owner                   User?                     @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  owner                   User?                        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   ownerId                 String?
-  id                      String                    @id() @default(cuid())
-  createdAt               DateTime                  @default(now())
-  updatedAt               DateTime                  @updatedAt()
+  id                      String                       @id() @default(cuid())
+  createdAt               DateTime                     @default(now())
+  updatedAt               DateTime                     @updatedAt()
   name                    String
-  type                    LayerType
+  type                    LAYER_TYPE
   visibleForGroups        Group[]
-  status                  BaseLayerConversionStatus @default(COMPLETED)
-  progress                Float                     @default(0)
+  status                  BASE_LAYER_CONVERSION_STATUS @default(COMPLETED)
+  progress                Float                        @default(0)
   sizeGB                  Float
-  description             String                    @default("")
+  description             String                       @default("")
   /// A layer can either be stored in azure or externally.
   href                    String?
   /// Containername is only used when its stored in azure.
@@ -286,7 +287,7 @@ model Event {
   id                 String          @id() @default(cuid())
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt()
-  status             EventStatus
+  status             EVENT_STATUS
   title              String          @db.Text()
   startTime          DateTime
   endTime            DateTime
@@ -298,11 +299,11 @@ model Event {
 }
 
 model EventAttendee {
-  event   Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event   Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId String
-  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String
-  role    EventAttendeeRoles
+  role    EVENT_ATTENDEE_ROLES
 
   @@id([eventId, userId])
 }

@@ -29,7 +29,7 @@ abstract model DirectedPoint extends Base {
   endPointZ   Float
 }
 
-enum Languages {
+enum LANGUAGES {
   EN
   DE
 }

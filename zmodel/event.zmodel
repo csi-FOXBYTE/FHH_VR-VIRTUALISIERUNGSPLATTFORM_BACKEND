@@ -2,8 +2,9 @@ import "project"
 import "user"
 import "common"
 import "event"
+import "permissions"
 
-enum EventStatus {
+enum EVENT_STATUS {
   MISSING_HOST
   ACTIVE
   PLANNED
@@ -11,7 +12,7 @@ enum EventStatus {
 }
 
 model Event extends Base, Ownable, AdminPrivilege {
-  status             EventStatus
+  status             EVENT_STATUS
 
   title              String          @db.Text
   startTime          DateTime
@@ -24,21 +25,21 @@ model Event extends Base, Ownable, AdminPrivilege {
   attendees          EventAttendee[]
 
   @@allow('read', attendees?[userId == auth().id])
-  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT_OWNER']]])
+  @@allow('create', auth().assignedGroups?[assignedRoles?[EVENT_OWNER in assignedPermissions]])
 }
 
-enum EventAttendeeRoles {
+enum EVENT_ATTENDEE_ROLES {
   GUEST
   MODERATOR
 }
 
 model EventAttendee extends AdminPrivilege {
-  event   Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event   Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId String
-  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String
 
-  role    EventAttendeeRoles
+  role    EVENT_ATTENDEE_ROLES
 
   @@id([eventId, userId])
   @@allow('all', auth().id == userId)

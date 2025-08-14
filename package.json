@@ -1,6 +1,6 @@
 {
   "name": "WebBackend",
-  "version": "0.0.19",
+  "version": "0.1.0",
   "description": "",
   "main": ".dist/index.js",
   "type": "module",
@@ -10,7 +10,7 @@
     "lint": "oxlint && eslint",
     "dev": "tsx dev.ts",
     "build": "tsx build.ts",
-    "publish:docker": "docker build -t fhhvr-webbackend:0.0.19 . --secret id=npmrc,src=%USERPROFILE%/.npmrc --secret id=env,src=.env && docker tag fhhvr-webbackend:0.0.19 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.0.19 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.0.19"
+    "publish:docker": "docker build -t fhhvr-webbackend:0.1.0 . --secret id=npmrc,src=%USERPROFILE%/.npmrc --secret id=env,src=.env && docker tag fhhvr-webbackend:0.1.0 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.1.0 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.1.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -48,6 +48,7 @@
     "@opentelemetry/resources": "^2.0.1",
     "@opentelemetry/semantic-conventions": "^1.36.0",
     "@prisma/client": "6.8.2",
+    "@types/ejs": "^3.1.5",
     "@types/graceful-fs": "^4.1.9",
     "@types/lodash": "^4.17.20",
     "@types/nodemailer": "^6.4.17",
@@ -57,6 +58,7 @@
     "cacheable": "^1.9.0",
     "dayjs": "^1.11.13",
     "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
     "esbuild-plugin-copy": "^2.1.1",
     "fastify": "^5.3.3",
     "ics": "^3.8.1",

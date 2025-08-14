@@ -24,7 +24,7 @@ model User extends Base, AdminPrivilege {
 
     assignedGroups    Group[]
 
-    language          Languages?
+    language          LANGUAGES?
 
     @@allow('all', auth().id == id)
 }
