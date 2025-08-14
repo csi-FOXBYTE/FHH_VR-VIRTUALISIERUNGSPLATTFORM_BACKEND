@@ -1,19 +1,23 @@
 import "user"
 
 abstract model Base {
-  id        String   @id() @default(cuid()) @deny('update', true)
-  createdAt DateTime @default(now()) @deny('update', true)
-  updatedAt DateTime @updatedAt() @deny('update', true)
+  id        String   @id() @default(cuid()) @allow('read', true)
+  createdAt DateTime @default(now()) @allow('read', true)
+  updatedAt DateTime @updatedAt() @allow('read', true)
 }
 
 abstract model Ownable {
-  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ownerId String? @deny('update', true)
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  ownerId String?
 
   @@allow('all', auth().id == ownerId)
 }
 
-abstract model DirectedPoint extends Base, Ownable {
+abstract model AdminPrivilege {
+  @@allow('all', auth().assignedGroups?[assignedRoles?[isAdminRole == true]])
+}
+
+abstract model DirectedPoint extends Base {
   name        String
   description String @default("")
 
@@ -23,4 +27,9 @@ abstract model DirectedPoint extends Base, Ownable {
   endPointX   Float
   endPointY   Float
   endPointZ   Float
+}
+
+enum Languages {
+  EN
+  DE
 }

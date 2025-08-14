@@ -1,6 +1,6 @@
 import "common"
 
-model Configuration extends Base {
+model Configuration extends Base, AdminPrivilege {
     defaultEPSG                     String
 
     globalStartPointX               Float

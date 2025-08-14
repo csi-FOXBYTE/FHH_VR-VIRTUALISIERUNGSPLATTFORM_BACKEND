@@ -1,3 +1,5 @@
+import "./bootstrap-otel.js"; // this must be at first position!
+import "dotenv/config";
 import fastifyToab from "@csi-foxbyte/fastify-toab";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
@@ -5,19 +7,25 @@ import fastifyMultipart from "@fastify/multipart";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import fastifyUnderPressure from "@fastify/under-pressure";
-import "dotenv";
 import Fastify from "fastify";
 import json from "../package.json" with { type: "json" };
 import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
-import { getRegistries } from "./registries.js";
 import { createBullBoard } from '@bull-board/api';
 import {BullMQAdapter} from "@bull-board/api/bullMQAdapter.js";
 import { FastifyAdapter } from '@bull-board/fastify';
+import fastifyRateLimit from "@fastify/rate-limit"
+import {FastifyOtelInstrumentation} from "@fastify/otel";
 
 injectPinoLogger();
 
-const fastify = Fastify({
+const fastify = await Fastify({
   logger: loggerOptions,
+});
+
+const fastifyOtel = new FastifyOtelInstrumentation();
+
+await fastify.register(fastifyOtel.plugin(), {
+  logLevel: "info",
 });
 
 process.on("unhandledRejection", (reason) => {
@@ -25,21 +33,19 @@ process.on("unhandledRejection", (reason) => {
 });
 
 fastify.register(fastifyHelmet, {});
-// fastify.register(fastifyRateLimit, {
-//   max: 200,
-//   timeWindow: "1 minute",
-// });
+fastify.register(fastifyRateLimit, {
+  max: 500,
+  timeWindow: "1 minute",
+});
 fastify.register(fastifyUnderPressure, {});
 fastify.register(fastifyCors, {});
 
 fastify.register(fastifyMultipart, {
   limits: {
-    fileSize: 50_000_000_000_000_000, // 50 gb
+    fileSize: 16_000_000, // 16 mb
     files: 10,
   },
 });
-
-
 
 fastify.register(fastifySwagger, {
   openapi: {
@@ -78,6 +84,8 @@ fastify.register(fastifySwaggerUi, {
   transformSpecificationClone: true,
 });
 
+const {getRegistries} = await import("./registries.js");
+
 const registries = await getRegistries(process.env.WORKER_DISABLED === "true");
 
 fastify.register(fastifyToab, {
@@ -99,6 +107,7 @@ fastify.route({
     const serverAdapter = new FastifyAdapter();
 
     createBullBoard({
+      //@ts-expect-error wrong types here
       queues: Array.from(registries.workerRegistry.queues.values()).map(queue => new BullMQAdapter(queue)),
       serverAdapter,
     })

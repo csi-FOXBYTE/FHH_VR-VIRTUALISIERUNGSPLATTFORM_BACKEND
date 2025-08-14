@@ -1,5 +1,6 @@
 import { build, context } from "esbuild";
 import glob from "tiny-glob";
+import {copy} from "esbuild-plugin-copy";
 
 let lastGlobbedFiles: string = "";
 
@@ -22,6 +23,10 @@ export async function startDev() {
     minify: false,
     platform: "node",
     splitting: false,
+    plugins: [copy({ assets: {
+      from: ["src/**/*.json"],
+      to: ["./"]
+    } })],
     treeShaking: true,
     format: "esm",
     sourcemap: "inline",
@@ -43,6 +48,10 @@ export async function startBuild() {
     outdir: ".build",
     bundle: false,
     minify: true,
+    plugins: [copy({ assets: {
+      from: ["src/**/*.json"],
+      to: ["./"]
+    } })],
     platform: "node",
     splitting: false,
     treeShaking: true,

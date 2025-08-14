@@ -3,25 +3,15 @@ import { generate, preprocess } from "@csi-foxbyte/mesh-dem-to-terrain";
 import _ from "lodash";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
 import { injectPinoLogger } from "../../lib/pino.js";
-import { getRegistries } from "../../registries.js";
-import type { ConvertTerrainWorkerJob } from "./convertTerrain.worker.js";
-
-async function initializeContainers() {
-  const { serviceRegistry, workerRegistry } = await getRegistries();
-
-  return {
-    services: serviceRegistry.resolve(),
-    queues: { get: workerRegistry.getQueue.bind(workerRegistry) },
-  };
-}
+import { initializeContainers } from "../../registries.js";
+import { Converter3DConvertTerrainWorkerJob, getBlobStorageService } from "../../@internals/index.js";
 
 injectPinoLogger();
 
 export default async function run(
-  job: ConvertTerrainWorkerJob
-): Promise<ConvertTerrainWorkerJob["returnValue"]> {
+  job: Converter3DConvertTerrainWorkerJob
+): Promise<Converter3DConvertTerrainWorkerJob["returnValue"]> {
   const { services } = await initializeContainers();
 
   const blobStorageService = await getBlobStorageService(services);

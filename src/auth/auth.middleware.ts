@@ -1,11 +1,9 @@
 import { createMiddleware, GenericRouteError } from "@csi-foxbyte/fastify-toab";
-import { getAuthService } from "./auth.service.js";
+import { getAuthService } from "../@internals/index.js";
 
 export const authMiddleware = createMiddleware(
-  async ({ ctx, services, request }, next) => {
+  async ({ ctx, services }, next) => {
     const authService = await getAuthService(services);
-
-    console.log({ ad: request.id })
 
     const session = await authService.getSession();
 

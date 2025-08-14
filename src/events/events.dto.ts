@@ -22,9 +22,10 @@ export const eventsStatusResponseDTO = Type.Object({
 export const eventsCreateRequestDTO = Type.Object({
   endTime: Type.String(),
   startTime: Type.String(),
-  status: Type.String(),
   title: Type.String(),
   attendees: Type.Array(Type.String()),
+  moderators: Type.Array(Type.String()),
+  project: Type.Optional(Type.String()),
 });
 export type EventsCreateRequestDTO = Static<typeof eventsCreateRequestDTO>;
 
@@ -35,5 +36,7 @@ export const eventsUpdateRequestDTO = Type.Object({
   status: Type.Optional(Type.String()),
   title: Type.Optional(Type.String()),
   attendees: Type.Optional(Type.Array(Type.String())),
+  moderators: Type.Array(Type.String()),
+  project: Type.Optional(Type.String()),
 });
 export type EventsUpdateRequestDTO = Static<typeof eventsUpdateRequestDTO>;

@@ -4,7 +4,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 datasource db {
-  provider = "sqlserver"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -12,28 +12,56 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Languages {
+  EN
+  DE
+}
+
+enum LayerType {
+  TILES3D
+  TERRAIN
+  IMAGERY
+  WMS
+}
+
+enum BaseLayerConversionStatus {
+  ACTIVE
+  PENDING
+  FAILED
+  COMPLETED
+}
+
+enum EventStatus {
+  MISSING_HOST
+  ACTIVE
+  PLANNED
+  END
+}
+
+enum EventAttendeeRoles {
+  GUEST
+  MODERATOR
+}
+
 model User {
-  id                      String            @id() @default(cuid())
-  createdAt               DateTime          @default(now())
-  updatedAt               DateTime          @updatedAt()
-  name                    String?
-  phoneNumber             String?
-  email                   String            @unique()
-  emailVerified           DateTime?
-  image                   String?
-  accounts                Account[]
-  sessions                Session[]
-  Authenticator           Authenticator[]
-  projects                Project[]
-  attendedEvents          EventAttendee[]
-  createdEvents           Event[]
-  createdBaseLayers       BaseLayer[]
-  createdProjectLayers    ProjectLayer[]
-  createdVisualAxes       VisualAxis[]
-  createdStartingPoints   StartingPoint[]
-  createdClippingPolygons ClippingPolygon[]
-  visibleProjects         Project[]         @relation("visibleForUsers")
-  assignedGroups          Group[]
+  id                String          @id() @default(cuid())
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt()
+  name              String?
+  email             String          @unique()
+  emailVerified     DateTime?
+  image             String?
+  accounts          Account[]
+  sessions          Session[]
+  Authenticator     Authenticator[]
+  projects          Project[]
+  attendedEvents    EventAttendee[]
+  createdEvents     Event[]
+  createdBaseLayers BaseLayer[]
+  createdVisualAxes VisualAxis[]
+  visibleProjects   Project[]       @relation("visibleForUsers")
+  assignedGroups    Group[]
+  language          Languages?
 }
 
 model Account {
@@ -87,7 +115,7 @@ model Authenticator {
 }
 
 model Project {
-  owner                 User?            @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner                 User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   ownerId               String?
   id                    String           @id() @default(cuid())
   createdAt             DateTime         @default(now())
@@ -101,20 +129,18 @@ model Project {
   includedProjectLayers ProjectLayer[]   @relation("includedInProjects")
   projectLayers         ProjectLayer[]
   img                   String?          @db.Text()
-  camera                String?          @db.Text()
+  camera                Json?
+  region                Json?
   events                Event[]
 }
 
 model ClippingPolygon {
-  owner          User?        @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ownerId        String?
   id             String       @id() @default(cuid())
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt()
   name           String
-  /// Comma separated point list x0,y0,z0,...,xn,yn,zn
-  points         String       @db.Text()
-  projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id])
+  points         Float[]
+  projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   projectLayerId String
   affectsTerrain Boolean      @default(false)
 }
@@ -143,7 +169,7 @@ model ProjectModel {
 
 /// Is global per definition, can not be associatd to a project.
 model VisualAxis {
-  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   ownerId     String?
   id          String   @id() @default(cuid())
   createdAt   DateTime @default(now())
@@ -160,8 +186,6 @@ model VisualAxis {
 
 /// Can be global or local depending on if a project is defined.
 model StartingPoint {
-  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ownerId     String?
   id          String   @id() @default(cuid())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt()
@@ -173,9 +197,35 @@ model StartingPoint {
   endPointX   Float
   endPointY   Float
   endPointZ   Float
-  project     Project? @relation(fields: [projectId], references: [id])
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   projectId   String?
   img         String   @db.Text()
+}
+
+model ProjectLayer {
+  id                 String            @id() @default(cuid())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt()
+  name               String
+  projectModels      ProjectModel[]
+  clippingPolygons   ClippingPolygon[]
+  baseLayers         BaseLayer[]
+  extensionLayers    ExtensionLayer[]
+  includedInProjects Project[]         @relation("includedInProjects")
+  project            Project           @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  projectId          String
+}
+
+model ExtensionLayer {
+  id                      String         @id() @default(cuid())
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt()
+  name                    String
+  type                    LayerType
+  project                 Project        @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  projectId               String
+  includedInProjectLayers ProjectLayer[]
+  href                    String
 }
 
 model Group {
@@ -188,8 +238,7 @@ model Group {
   assignedRoles     Role[]
   visibleBaseLayers BaseLayer[]
   visibleProjects   Project[]
-  /// This is a glob style matcher that is separated by , because of the limitations of MSSQL in regards to Arrays
-  defaultFor        String?
+  defaultFor        String[]
 }
 
 model Role {
@@ -212,20 +261,18 @@ model Permission {
 }
 
 model BaseLayer {
-  owner                   User?          @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner                   User?                     @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   ownerId                 String?
-  id                      String         @id() @default(cuid())
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt()
+  id                      String                    @id() @default(cuid())
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt()
   name                    String
-  /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
-  type                    String
+  type                    LayerType
   visibleForGroups        Group[]
-  /// Can be one of PENDING | FAILED | COMPLETED
-  status                  String         @default("COMPLETED")
-  progress                Float          @default(0)
+  status                  BaseLayerConversionStatus @default(COMPLETED)
+  progress                Float                     @default(0)
   sizeGB                  Float
-  description             String         @default("")
+  description             String                    @default("")
   /// A layer can either be stored in azure or externally.
   href                    String?
   /// Containername is only used when its stored in azure.
@@ -233,61 +280,29 @@ model BaseLayer {
   includedInProjectLayers ProjectLayer[]
 }
 
-model ExtensionLayer {
-  id                      String         @id() @default(cuid())
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt()
-  name                    String
-  /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
-  type                    String
-  project                 Project        @relation(fields: [projectId], references: [id])
-  projectId               String
-  includedInProjectLayers ProjectLayer[]
-  href                    String
-}
-
-model ProjectLayer {
-  owner              User?             @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ownerId            String?
-  id                 String            @id() @default(cuid())
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt()
-  name               String
-  projectModels      ProjectModel[]
-  clippingPolygons   ClippingPolygon[]
-  baseLayers         BaseLayer[]
-  extensionLayers    ExtensionLayer[]
-  includedInProjects Project[]         @relation("includedInProjects")
-  project            Project           @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  projectId          String
-}
-
 model Event {
-  owner              User?           @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner              User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   ownerId            String?
   id                 String          @id() @default(cuid())
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt()
-  /// Can be one of MISSING_HOST, ACTIVE, PLANNED, END
-  status             String
+  status             EventStatus
   title              String          @db.Text()
   startTime          DateTime
   endTime            DateTime
   joinCode           String?
   heartbeatTimestamp DateTime?
-  project            Project?        @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  project            Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
   projectId          String?
   attendees          EventAttendee[]
 }
 
-/// This is explicit because of potential role assignments per event
 model EventAttendee {
-  event   Event  @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  event   Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
   eventId String
-  user    User   @relation(fields: [userId], references: [id])
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId  String
-  /// Can be one of GUEST, MODERATOR
-  role    String @default("GUEST")
+  role    EventAttendeeRoles
 
   @@id([eventId, userId])
 }

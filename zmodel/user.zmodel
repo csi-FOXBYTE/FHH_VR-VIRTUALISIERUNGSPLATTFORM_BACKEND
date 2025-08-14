@@ -4,80 +4,72 @@ import "layer"
 import "common"
 import "event"
 
-model User extends Base {
-    name                    String?
-    phoneNumber             String?
-    email                   String            @unique()
-    emailVerified           DateTime?
-    image                   String?
-    accounts                Account[]
-    sessions                Session[]
-    Authenticator           Authenticator[]
+model User extends Base, AdminPrivilege {
+    name              String?         @allow('read', true)
+    email             String          @unique() @allow('read', true)
+    emailVerified     DateTime?
+    image             String?
+    accounts          Account[]
+    sessions          Session[]
+    Authenticator     Authenticator[]
 
-    projects                Project[]
-    attendedEvents          EventAttendee[]
+    projects          Project[]
+    attendedEvents    EventAttendee[]
 
-    createdEvents           Event[]
-    createdBaseLayers       BaseLayer[]
-    createdProjectLayers    ProjectLayer[]
-    createdVisualAxes       VisualAxis[]
-    createdStartingPoints   StartingPoint[]
-    createdClippingPolygons ClippingPolygon[]
+    createdEvents     Event[]
+    createdBaseLayers BaseLayer[]
+    createdVisualAxes VisualAxis[]
 
-    visibleProjects         Project[]         @relation("visibleForUsers")
+    visibleProjects   Project[]       @relation("visibleForUsers")
 
-    assignedGroups          Group[]
+    assignedGroups    Group[]
+
+    language          Languages?
 
     @@allow('all', auth().id == id)
-    @@allow('read', true)
-    @@auth
-
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'USER:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'USER:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'USER:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'USER:DELETE']]])
 }
 
-model Account {
+model Account extends AdminPrivilege {
     userId            String
     type              String
     provider          String
     providerAccountId String
-    refresh_token     String?  @db.Text()
-    access_token      String?  @db.Text()
+    refresh_token     String?  @db.Text() @deny('all', true)
+    access_token      String?  @db.Text() @deny('all', true)
     expires_at        Int?
     token_type        String?  @db.Text()
     scope             String?  @db.Text()
-    id_token          String?  @db.Text()
+    id_token          String?  @db.Text() @deny('all', true)
     session_state     String?  @db.Text()
     createdAt         DateTime @default(now())
     updatedAt         DateTime @updatedAt()
     user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@id([provider, providerAccountId])
-    @@deny('all', true)
+
+    @@allow('all', auth().id == user.id)
 }
 
-model Session {
+model Session extends AdminPrivilege {
     sessionToken String   @unique()
     userId       String
     expires      DateTime
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
     createdAt    DateTime @default(now())
     updatedAt    DateTime @updatedAt()
-    @@deny('all', true)
+
+    @@allow('all', auth().id == user.id)
 }
 
-model VerificationToken {
+model VerificationToken extends AdminPrivilege {
     identifier String
     token      String
     expires    DateTime
 
     @@id([identifier, token])
-    @@deny('all', true)
 }
 
-model Authenticator {
+model Authenticator extends AdminPrivilege {
     credentialID         String  @unique()
     userId               String
     providerAccountId    String
@@ -89,5 +81,6 @@ model Authenticator {
     user                 User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@id([userId, credentialID])
-    @@deny('all', true)
+
+    @@allow('all', auth().id == user.id)
 }

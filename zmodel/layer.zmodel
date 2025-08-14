@@ -7,18 +7,30 @@ abstract model Layer {
   name String
 }
 
-model BaseLayer extends Layer, Base, Ownable {
-  /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
-  type                    String
+enum LayerType {
+  TILES3D
+  TERRAIN
+  IMAGERY
+  WMS
+}
+
+enum BaseLayerConversionStatus {
+  ACTIVE
+  PENDING
+  FAILED
+  COMPLETED
+}
+
+model BaseLayer extends Layer, Base, Ownable, AdminPrivilege {
+  type                    LayerType
   visibleForGroups        Group[]
 
-  /// Can be one of PENDING | FAILED | COMPLETED
-  status                  String         @default("COMPLETED")
-  progress                Float          @default(0)
+  status                  BaseLayerConversionStatus @default(COMPLETED)
+  progress                Float                     @default(0)
 
   sizeGB                  Float
 
-  description             String         @default("")
+  description             String                    @default("")
 
   /// A layer can either be stored in azure or externally.
   href                    String?
@@ -26,43 +38,10 @@ model BaseLayer extends Layer, Base, Ownable {
   containerName           String?
 
   includedInProjectLayers ProjectLayer[]
+  /// Visible for event attendees
+  @@allow('read', includedInProjectLayers?[project.events?[attendees?[userId == auth().id]]])
 
-  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:CREATE']]])
-  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:READ']]])
-  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:UPDATE']]])
-  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:DELETE']]])
-}
+  @@allow('read', visibleForGroups?[assignedUsers?[id == auth().id]])
 
-model ExtensionLayer extends Layer, Base {
-  /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
-  type                    String
-
-  project                 Project        @relation(fields: [projectId], references: [id])
-  projectId               String
-
-  includedInProjectLayers ProjectLayer[]
-
-  href                    String
-
-  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EXTENSION_LAYER:CREATE']]])
-  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EXTENSION_LAYER:READ']]])
-  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EXTENSION_LAYER:UPDATE']]])
-  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EXTENSION_LAYER:DELETE']]])
-}
-
-model ProjectLayer extends Layer, Base, Ownable {
-  projectModels      ProjectModel[]
-  clippingPolygons   ClippingPolygon[]
-  baseLayers         BaseLayer[]
-  extensionLayers    ExtensionLayer[]
-
-  includedInProjects Project[]         @relation("includedInProjects")
-
-  project            Project           @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  projectId          String
-
-  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:CREATE']]])
-  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:READ']]])
-  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:UPDATE']]])
-  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:DELETE']]])
+  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER_OWNER']]])
 }

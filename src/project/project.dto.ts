@@ -113,3 +113,83 @@ export const projectDTO = Type.Object({
     })
   ),
 });
+
+export const unityProjectDTO = Type.Object({
+  name: Type.String(),
+  id: Type.String(),
+  myRole: Type.Union([Type.Literal("MODERATOR"), Type.Literal("GUEST")]),
+  description: Type.String(),
+  startingPoints: Type.Array(
+    Type.Object({
+      id: Type.String(),
+      name: Type.String(),
+      img: Type.String(),
+      description: Type.String(),
+      origin: Type.Object({
+        x: Type.Number(),
+        y: Type.Number(),
+        z: Type.Number(),
+      }),
+      target: Type.Object({
+        x: Type.Number(),
+        y: Type.Number(),
+        z: Type.Number(),
+      }),
+    })
+  ),
+  variants: Type.Array(
+    Type.Object({
+      id: Type.String(),
+      name: Type.String(),
+      baseLayers: Type.Array(
+        Type.Object({
+          url: Type.String(),
+          id: Type.String(),
+          name: Type.String(),
+          type: Type.Union([
+            Type.Literal("TILES3D"),
+            Type.Literal("TERRAIN"),
+            Type.Literal("IMAGERY"),
+          ]),
+        })
+      ),
+      clippingPolygons: Type.Array(
+        Type.Object({
+          id: Type.String(),
+          affectsTerrain: Type.Boolean(),
+          points: Type.Array(
+            Type.Object({
+              x: Type.Number(),
+              y: Type.Number(),
+              z: Type.Number(),
+            })
+          ),
+        })
+      ),
+      models: Type.Array(
+        Type.Object({
+          id: Type.String(),
+          attributes: Type.Record(Type.String(), Type.String()),
+          url: Type.String(),
+          scale: Type.Object({
+            x: Type.Number(),
+            y: Type.Number(),
+            z: Type.Number(),
+          }),
+          translation: Type.Object({
+            x: Type.Number(),
+            y: Type.Number(),
+            z: Type.Number(),
+          }),
+          rotation: Type.Object({
+            x: Type.Number(),
+            y: Type.Number(),
+            z: Type.Number(),
+            w: Type.Number(),
+          }),
+        })
+      ),
+    })
+  ),
+});
+export type UnityProjectDTO = Static<typeof unityProjectDTO>;

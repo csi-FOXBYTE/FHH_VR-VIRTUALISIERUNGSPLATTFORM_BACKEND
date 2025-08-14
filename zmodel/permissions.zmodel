@@ -3,7 +3,7 @@ import "common"
 import "layer"
 import "project"
 
-model Group extends Base {
+model Group extends Base, AdminPrivilege {
     name              String      @unique
 
     isAdminGroup      Boolean     @default(false) @deny('update', true)
@@ -14,33 +14,26 @@ model Group extends Base {
     visibleBaseLayers BaseLayer[]
     visibleProjects   Project[]
 
-    /// This is a glob style matcher that is separated by , because of the limitations of MSSQL in regards to Arrays
-    defaultFor        String?
+    defaultFor        String[]
 
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:DELETE']]])
+    @@deny('delete,update', isAdminGroup == true)
 }
 
-model Role extends Base {
+model Role extends Base, AdminPrivilege {
     assignedGroups      Group[]
     assignedPermissions Permission[]
     name                String       @unique
 
     isAdminRole         Boolean      @default(false) @deny('update', true)
 
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:DELETE']]])
+    @@deny('delete,update', isAdminRole == true)
 }
 
 /// This is readonly
-model Permission extends Base {
+model Permission extends Base, AdminPrivilege {
     assignedRoles Role[]
-    name          String @unique @deny('update', true)
+    name          String @unique
 
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PERMISSION:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PERMISSION:UPDATE']]])
+    @@deny('delete', true)
+    @@deny('update', true)
 }

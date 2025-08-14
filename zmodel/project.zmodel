@@ -4,7 +4,7 @@ import "permissions"
 import "event"
 import "layer"
 
-model Project extends Base, Ownable {
+model Project extends Base, Ownable, AdminPrivilege {
     title                 String           @db.Text
     description           String           @db.Text
 
@@ -17,34 +17,39 @@ model Project extends Base, Ownable {
     projectLayers         ProjectLayer[]
 
     img                   String?          @db.Text
-    camera                String?          @db.Text
+    camera                Json?
+    region                Json?
 
     events                Event[]
 
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:DELETE']]])
+    /// Visible for event attendees
+    @@allow('read', events?[attendees?[userId == auth().id]])
+
+    @@allow('read', visibleForUsers?[id == auth().id])
+    @@allow('read', visibleForGroups?[assignedUsers?[id == auth().id]])
+
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_OWNER']]])
 }
 
-model ClippingPolygon extends Base, Ownable {
+model ClippingPolygon extends Base, AdminPrivilege {
     name           String
-    /// Comma separated point list x0,y0,z0,...,xn,yn,zn
-    points         String       @db.Text
+    points         Float[]
 
-    projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id])
+    projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     projectLayerId String
 
     affectsTerrain Boolean      @default(false)
 
+    /// Visible for event attendees
+    @@allow('read', projectLayer.project.events?[attendees?[userId == auth().id]])
+
+    @@allow('read', projectLayer.project.visibleForUsers?[id == auth().id])
+    @@allow('read', projectLayer.project.visibleForGroups?[assignedUsers?[id == auth().id]])
+
     @@allow('all', projectLayer.project.owner.id == auth().id)
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:DELETE']]])
 }
 
-model ProjectModel extends Base {
+model ProjectModel extends Base, AdminPrivilege {
     name           String
     href           String
     /// JSON object of all assigned meta data
@@ -66,30 +71,70 @@ model ProjectModel extends Base {
     translationY   Float
     translationZ   Float
 
+    /// Visible for event attendees
+    @@allow('read', projectLayer.project.events?[attendees?[userId == auth().id]])
+
+    @@allow('read', projectLayer.project.visibleForUsers?[id == auth().id])
+    @@allow('read', projectLayer.project.visibleForGroups?[assignedUsers?[id == auth().id]])
+
     @@allow('all', projectLayer.project.owner.id == auth().id)
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:DELETE']]])
 }
 
 /// Is global per definition, can not be associatd to a project.
-model VisualAxis extends DirectedPoint {
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:DELETE']]])
+model VisualAxis extends DirectedPoint, Ownable, AdminPrivilege {
+    @@allow('read', true)
 }
 
 /// Can be global or local depending on if a project is defined.
-model StartingPoint extends DirectedPoint {
-    project   Project? @relation(fields: [projectId], references: [id])
+model StartingPoint extends DirectedPoint, AdminPrivilege {
+    project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     projectId String?
     img       String   @db.Text
 
+    /// Visible for event attendees
+    @@allow('read', project.events?[attendees?[userId == auth().id]])
+
+    @@allow('read', project.visibleForUsers?[id == auth().id])
+    @@allow('read', project.visibleForGroups?[assignedUsers?[id == auth().id]])
+
     @@allow('all', auth().id == project.owner.id)
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:DELETE']]])
+}
+
+model ProjectLayer extends Layer, Base, AdminPrivilege {
+    projectModels      ProjectModel[]
+    clippingPolygons   ClippingPolygon[]
+    baseLayers         BaseLayer[]
+    extensionLayers    ExtensionLayer[]
+
+    includedInProjects Project[]         @relation("includedInProjects")
+
+    project            Project           @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    projectId          String
+
+    /// Visible for event attendees
+    @@allow('read', project.events?[attendees?[userId == auth().id]])
+
+    @@allow('read', project.visibleForUsers?[id == auth().id])
+    @@allow('read', project.visibleForGroups?[assignedUsers?[id == auth().id]])
+
+    @@allow('all', auth().id == project.owner.id)
+}
+
+model ExtensionLayer extends Layer, Base, AdminPrivilege {
+    type                    LayerType
+
+    project                 Project        @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    projectId               String
+
+    includedInProjectLayers ProjectLayer[]
+
+    href                    String
+
+    /// Visible for event attendees
+    @@allow('read', project.events?[attendees?[userId == auth().id]])
+
+    @@allow('read', project.visibleForUsers?[id == auth().id])
+    @@allow('read', project.visibleForGroups?[assignedUsers?[id == auth().id]])
+
+    @@allow('all', auth().id == project.owner.id)
 }

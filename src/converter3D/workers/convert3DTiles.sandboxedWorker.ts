@@ -9,26 +9,16 @@ import { mkdir, rm } from "fs/promises";
 import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
-import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
 import { cityGMLToCityJSON } from "../../lib/CityGMLTools.js";
 import { injectPinoLogger } from "../../lib/pino.js";
-import { getRegistries } from "../../registries.js";
-import { Convert3DTilesWorkerJob } from "./convert3DTiles.worker.js";
-
-async function initializeContainers() {
-  const { serviceRegistry, workerRegistry } = await getRegistries();
-
-  return {
-    services: serviceRegistry.resolve(),
-    queues: { get: workerRegistry.getQueue.bind(workerRegistry) },
-  };
-}
+import { initializeContainers } from "../../registries.js";
+import { getBlobStorageService, type Converter3DConvert3DTilesWorkerJob } from "../../@internals/index.js";
 
 injectPinoLogger();
 
 export default async function run(
-  job: Convert3DTilesWorkerJob
-): Promise<Convert3DTilesWorkerJob["returnValue"]> {
+  job: Converter3DConvert3DTilesWorkerJob
+): Promise<Converter3DConvert3DTilesWorkerJob["returnValue"]> {
   const { services } = await initializeContainers();
 
   const blobStorageService = await getBlobStorageService(services);
