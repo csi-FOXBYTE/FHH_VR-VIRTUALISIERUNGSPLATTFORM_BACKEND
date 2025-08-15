@@ -7,7 +7,7 @@ import {
   eventsHostRequestDTO,
   eventsUpdateRequestDTO,
 } from "./events.dto.js";
-import { getEventsService } from "../@internals/index.js";
+import { getDbService, getEventsService } from "../@internals/index.js";
 
 const eventsController = createController()
   .use(authMiddleware)
@@ -15,13 +15,69 @@ const eventsController = createController()
 
 eventsController
   .addRoute("SSE", "/")
+  .output(
+    Type.Array(
+      Type.Object({
+        id: Type.String(),
+        joinCode: Type.Optional(Type.String()),
+        status: Type.String(),
+        endTime: Type.String(),
+        startTime: Type.String(),
+        title: Type.String(),
+        projectId: Type.Optional(Type.String()),
+        owner: Type.Object({
+          name: Type.String(),
+          email: Type.String(),
+          id: Type.String(),
+        }),
+      })
+    )
+  )
   .handler(async function* ({ services, signal }) {
     const eventsService = await getEventsService(services);
 
+    const dbService = await getDbService(services);
+
+    async function getEventList() {
+      const events = await dbService.event.findMany({
+        select: {
+          id: true,
+          joinCode: true,
+          startTime: true,
+          endTime: true,
+          title: true,
+          status: true,
+          projectId: true,
+          owner: {
+            select: {
+              name: true,
+              id: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return events.map((event) => ({
+        ...event,
+        endTime: event.endTime.toISOString(),
+        startTime: event.startTime.toISOString(),
+        projectId: event.projectId ?? undefined,
+        joinCode: event.joinCode ?? undefined,
+        owner: {
+          name: event.owner?.name ?? "-",
+          email: event.owner?.email ?? "-",
+          id: event.owner?.id ?? "-",
+        },
+      }));
+    }
+
     const events = eventsService.list();
 
-    for await (const value of on(events, "change", { signal })) {
-      yield value;
+    yield await getEventList();
+
+    for await (const _ of on(events, "change", { signal })) {
+      yield await getEventList();
     }
   });
 
@@ -46,10 +102,67 @@ eventsController
 eventsController
   .addRoute("SSE", "/:id/status")
   .params(Type.Object({ id: Type.String() }))
+  .output(
+    Type.Object({
+      id: Type.String(),
+      joinCode: Type.Optional(Type.String()),
+      status: Type.String(),
+      endTime: Type.String(),
+      startTime: Type.String(),
+      title: Type.String(),
+      projectId: Type.Optional(Type.String()),
+      owner: Type.Object({
+        name: Type.String(),
+        email: Type.String(),
+        id: Type.String(),
+      }),
+    })
+  )
   .handler(async function* ({ services, signal, params }) {
     const eventsService = await getEventsService(services);
 
     const events = eventsService.status(params.id);
+
+    const dbService = await getDbService(services);
+
+    async function getEvent(id: string) {
+      const event = await dbService.event.findFirstOrThrow({
+        where: {
+          id,
+        },
+        select: {
+          id: true,
+          joinCode: true,
+          startTime: true,
+          endTime: true,
+          title: true,
+          status: true,
+          projectId: true,
+          owner: {
+            select: {
+              name: true,
+              id: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      return {
+        ...event,
+        endTime: event.endTime.toISOString(),
+        startTime: event.startTime.toISOString(),
+        projectId: event.projectId ?? undefined,
+        joinCode: event.joinCode ?? undefined,
+        owner: {
+          name: event.owner?.name ?? "-",
+          email: event.owner?.email ?? "-",
+          id: event.owner?.id ?? "-",
+        },
+      };
+    }
+
+    yield await getEvent(params.id);
 
     for await (const value of on(events, "change", { signal })) {
       yield value;

@@ -342,79 +342,19 @@ const projectService = createService(
           );
 
         // delete project models
-        await dbService.projectModel.deleteMany({
-          where: {
-            projectLayer: {
-              projectId: id,
-            },
-          },
-        });
+        await dbService.project.delete({ where: { id }});
 
         await blobStorageService.deleteContainer(`project-${id}`);
-
-        await dbService.project.update({
-          data: {
-            // delete extension layers
-            extensionLayers: {
-              deleteMany: {},
-            },
-            // delete project layers
-            projectLayers: {
-              deleteMany: {},
-            },
-            // disconnect project from all events
-            events: {
-              set: [],
-            },
-            // delete starting points
-            startingPoints: {
-              deleteMany: {},
-            },
-          },
-          where: {
-            id,
-          },
-        });
-
-        await dbService.project.delete({ where: { id } });
       },
       async saveProject(project: ProjectDTO): Promise<void> {
-        // remove all project models
-        await dbService.projectModel.deleteMany({
-          where: {
-            projectLayer: {
-              projectId: project.id,
-            },
-          },
-        });
-
-        // remove all clipping polygons
-        await dbService.clippingPolygon.deleteMany({
-          where: {
-            projectLayer: {
-              projectId: project.id,
-            },
-          },
-        });
-
         // remove all project layers
-
         await dbService.projectLayer.deleteMany({
           where: {
             projectId: project.id,
           },
         });
 
-        // remove all starting points
-
-        await dbService.startingPoint.deleteMany({
-          where: {
-            projectId: project.id,
-          },
-        });
-
         // create project layers
-
         for (const layer of project.layers) {
           const { id } = await dbService.projectLayer.create({
             data: {

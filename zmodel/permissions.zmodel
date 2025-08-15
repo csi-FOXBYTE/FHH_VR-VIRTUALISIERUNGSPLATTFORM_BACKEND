@@ -33,6 +33,7 @@ model Role extends Base, AdminPrivilege {
     @@allow('read', true)
 }
 
+/// This is readonly
 enum PERMISSIONS {
     BASE_LAYER_OWNER
     EVENT_OWNER

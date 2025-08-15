@@ -3,6 +3,7 @@ import {
 } from "@csi-foxbyte/fastify-toab";
 import { enhance } from "@zenstackhq/runtime";
 import { getAuthService, getPrismaService } from "../@internals/index.js";
+import realtimeExtension from "../prisma/extensions/realtimeExtension.js";
 
 const dbService = createService("db", async ({ services }) => {
   const prismaService = await getPrismaService(services);
@@ -13,7 +14,7 @@ const dbService = createService("db", async ({ services }) => {
 
   if (!session) throw new Error("Unauthenticated!");
 
-  return enhance(prismaService, session);
+  return enhance(prismaService, session).$extends(realtimeExtension());
 });
 
 /*

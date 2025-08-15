@@ -1,6 +1,7 @@
+import "dotenv/config";
 import { Prisma } from "@prisma/client";
 import { EventEmitter } from "events";
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 import { withNestedOperations } from "prisma-extension-nested-operations";
 
 type ChangeEmitters = EventEmitter<{
@@ -18,13 +19,45 @@ function throttle<T extends (...args: any[]) => void>(
 
     if (now - lastCall >= delay) {
       lastCall = now;
-      func.apply(this as any, args);
+      // @ts-expect-error wrong type
+      setTimeout(() => func.apply(this as any, args), delay);
     }
   };
 }
 
 function uncapitalize(value: string) {
   return `${value.slice(0, 1).toLowerCase()}${value.slice(1)}`;
+}
+
+let pub: RedisClientType | null = null;
+function getPub() {
+  if (!pub) {
+    pub = createClient({
+      url: process.env.REDIS_CONNECTION_STRING,
+      socket: {
+        reconnectStrategy(retries) {
+          return Math.min(retries * 50, 5_000);
+        },
+      },
+    });
+    pub.connect();
+  }
+  return pub;
+}
+let sub: RedisClientType | null = null;
+function getSub() {
+  if (!sub) {
+    sub = createClient({
+      url: process.env.REDIS_CONNECTION_STRING,
+      socket: {
+        reconnectStrategy(retries) {
+          return Math.min(retries * 50, 5_000);
+        },
+      },
+    });
+    sub.connect();
+  }
+  return sub;
 }
 
 type OPERATIONS = "UPDATE" | "DELETE" | "INSERT";
@@ -34,28 +67,10 @@ type OPERATIONS = "UPDATE" | "DELETE" | "INSERT";
  */
 export default function realtimeExtension() {
   return Prisma.defineExtension((prismaClient) => {
-    const pub = createClient({
-      url: process.env.REDIS_CONNECTIONSTRING,
-      socket: {
-        reconnectStrategy(retries) {
-          return Math.min(retries * 50, 5_000);
-        },
-      },
-    });
-    const sub = createClient({
-      url: process.env.REDIS_CONNECTIONSTRING,
-      socket: {
-        reconnectStrategy(retries) {
-          return Math.min(retries * 50, 5_000);
-        },
-      },
-    });
-
-    const pubReadyPromise = pub.connect();
-    sub.connect();
+    const pub = getPub();
+    const sub = getSub();
 
     async function emitChangeEvent(operation: OPERATIONS, model: string) {
-      await pubReadyPromise;
       await pub.publish(
         `changeEvents:${model}`,
         JSON.stringify({ operation, model })
@@ -80,7 +95,7 @@ export default function realtimeExtension() {
         $allModels: {
           $allOperations: withNestedOperations({
             async $rootOperation(params) {
-              const result = params.query(params.args);
+              const result = await params.query(params.args);
 
               switch (params.operation) {
                 // create
@@ -106,6 +121,8 @@ export default function realtimeExtension() {
               return result;
             },
             async $allNestedOperations(params) {
+              const result = await params.query(params.args);
+
               switch (params.operation) {
                 // create
                 case "connect":
@@ -127,7 +144,6 @@ export default function realtimeExtension() {
                   await emitChangeEvent("UPDATE", uncapitalize(params.model));
                   break;
               }
-              const result = params.query(params.args);
 
               return result;
             },
