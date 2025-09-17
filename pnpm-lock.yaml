@@ -24,14 +24,14 @@ importers:
         specifier: ^6.11.0
         version: 6.11.0
       '@csi-foxbyte/cityjson-to-3d-tiles':
-        specifier: ^0.0.3
-        version: 0.0.3(encoding@0.1.13)(jiti@2.4.2)(postcss@8.4.31)(yaml@2.8.0)
+        specifier: ^0.0.6
+        version: 0.0.6(encoding@0.1.13)(jiti@2.4.2)(postcss@8.4.31)(yaml@2.8.0)
       '@csi-foxbyte/fastify-toab':
         specifier: ^0.1.1
         version: 0.1.1(bullmq@5.56.4)
       '@csi-foxbyte/mesh-dem-to-terrain':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.0.2
+        version: 0.0.2
       '@csi-foxbyte/prisma-mssql-realtime-extension':
         specifier: ^0.0.3
         version: 0.0.3(@prisma/client@6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3))(rxjs-for-await@1.0.0(rxjs@7.8.2))(rxjs@7.8.2)
@@ -122,6 +122,9 @@ importers:
       fastify:
         specifier: ^5.3.3
         version: 5.3.3
+      gdal-async:
+        specifier: ^3.11.4
+        version: 3.11.4
       handlebars:
         specifier: ^4.7.8
         version: 4.7.8
@@ -417,8 +420,8 @@ packages:
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.3':
-    resolution: {integrity: sha512-z2nBy5KklEje5IAfoxPXEkBkmGCwAUQrg0o289SMQNYqjNA/8yXXTVwJPa+YWHqB3jqC9/rXCt7n9hCAu6wPXQ==}
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.6':
+    resolution: {integrity: sha512-D3rvz3yTZpyECiQG1CQtHoalBXIbTjBoSva7Cx20HUUj9IIqIqzpwrG0Pzecep1OTYTONstTIQ/OsA1es2JFqA==}
 
   '@csi-foxbyte/fastify-toab@0.1.1':
     resolution: {integrity: sha512-q3VgEU+Tt/A2ASdWB6hDB/Ochs0b8OcsRcncmVO7TEXsQadEHRAEq4NquAKnTPFLwwNuRxh0LoFy7JkFqBWDZA==}
@@ -426,8 +429,8 @@ packages:
     peerDependencies:
       bullmq: ^5.0.0
 
-  '@csi-foxbyte/mesh-dem-to-terrain@0.0.1':
-    resolution: {integrity: sha512-mcNOvQKcwGJipuOwk0TJw8U/n/WXMat6+XgqBjRMHgkUn4VilYaGT1DcBhy6Qd5xB2tQj0R/GzV0QKquqLFwLQ==}
+  '@csi-foxbyte/mesh-dem-to-terrain@0.0.2':
+    resolution: {integrity: sha512-6FyVRc8nfG3MLA9VAhi9mAi0/J2TXO/g/AbcQ2M1WnafKhHResOuTCgj8hii9M79TZV+TQV+x2uErC+jsDsmvQ==}
 
   '@csi-foxbyte/prisma-mssql-realtime-extension@0.0.3':
     resolution: {integrity: sha512-7nhsfW9/hCzfNBYeeKzSRpoLUBJxFnN05+F5j50IHj9H+xHfPqquvTB9UY83XQBMx3YshYpTQ6XVLPTlJ/YGBQ==}
@@ -2958,8 +2961,8 @@ packages:
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
     deprecated: This package is no longer supported.
 
-  gdal-async@3.11.0:
-    resolution: {integrity: sha512-ql5X4xj9jbMh0TxYlaohnUQC1rQjTy93zuViV/X415A/cqSntrBzumSMncmDezq+vnqJUxkS6rU5579u6Y8GAg==}
+  gdal-async@3.11.4:
+    resolution: {integrity: sha512-4irwTUGXBXkbfs/1hr91mAP1Z5HJOnncHd3KQFAAUmto8z2V8Utb1E8UF+YYnE1Qhfgqan6KIugAmZxA+QX4Wg==}
     engines: {node: '>=18'}
     bundledDependencies:
       - '@mapbox/node-pre-gyp'
@@ -5521,7 +5524,7 @@ snapshots:
 
   '@colors/colors@1.6.0': {}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.3(encoding@0.1.13)(jiti@2.4.2)(postcss@8.4.31)(yaml@2.8.0)':
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.6(encoding@0.1.13)(jiti@2.4.2)(postcss@8.4.31)(yaml@2.8.0)':
     dependencies:
       3d-tiles-tools: 0.5.0
       '@gltf-transform/core': 4.2.0
@@ -5573,7 +5576,7 @@ snapshots:
       handlebars: 4.7.8
       tiny-glob: 0.2.9
 
-  '@csi-foxbyte/mesh-dem-to-terrain@0.0.1':
+  '@csi-foxbyte/mesh-dem-to-terrain@0.0.2':
     dependencies:
       '@gltf-transform/core': 4.2.0
       '@gltf-transform/functions': 4.2.0
@@ -5592,7 +5595,7 @@ snapshots:
       earcut: 3.0.1
       esbuild: 0.25.5
       flatbush: 4.4.1
-      gdal-async: 3.11.0
+      gdal-async: 3.11.4
       glob: 11.0.3
       lodash: 4.17.21
       meshoptimizer: 0.24.0
@@ -8436,7 +8439,7 @@ snapshots:
       wide-align: 1.1.5
     optional: true
 
-  gdal-async@3.11.0:
+  gdal-async@3.11.4:
     dependencies:
       '@petamoriken/float16': 3.9.2
       nan: 2.23.0

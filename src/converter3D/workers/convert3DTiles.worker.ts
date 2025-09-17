@@ -18,6 +18,7 @@ const convert3DTilesWorker = createWorker()
         appearance: string;
         localProcessorFolder: string;
         threadCount: number;
+        hasAlphaEnabled: boolean;
       },
       void
     >

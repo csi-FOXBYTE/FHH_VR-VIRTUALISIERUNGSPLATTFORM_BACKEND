@@ -200,8 +200,10 @@ const eventsService = createService(
               })),
             });
 
-            if (!event.value || event.error)
+            if (!event.value || event.error) {
+              console.error(event.error);
               throw new Error("Could not generate ics event!");
+            }
 
             const eventFile = new File(
               [new Blob([event.value], { type: "text/calendar" })],
@@ -323,8 +325,10 @@ const eventsService = createService(
               })),
             });
 
-            if (!event.value || event.error)
+            if (!event.value || event.error) {
+              console.error(event.error);
               throw new Error("Could not generate ics event!");
+            }
 
             const eventFile = new File(
               [new Blob([event.value], { type: "text/calendar" })],
@@ -513,8 +517,10 @@ const eventsService = createService(
               })),
             });
 
-            if (!event.value || event.error)
+            if (!event.value || event.error) {
+              console.error(event.error);
               throw new Error("Could not generate ics event!");
+            }
 
             const eventFile = new File(
               [new Blob([event.value], { type: "text/calendar" })],

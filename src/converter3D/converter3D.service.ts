@@ -148,7 +148,13 @@ const converter3DService = createService(
     };
 
     const tile3D = {
-      async convert3DTile(token: string, name: string, srcSRS: string, appearance: string) {
+      async convert3DTile(
+        token: string,
+        name: string,
+        srcSRS: string,
+        appearance: string,
+        hasAlphaEnabled: boolean
+      ) {
         const authService = await getAuthService(services);
 
         const { blobName, containerName } =
@@ -174,6 +180,7 @@ const converter3DService = createService(
           srcSRS,
           threadCount: 4,
           id,
+          hasAlphaEnabled,
           appearance,
           containerName,
           localProcessorFolder: (

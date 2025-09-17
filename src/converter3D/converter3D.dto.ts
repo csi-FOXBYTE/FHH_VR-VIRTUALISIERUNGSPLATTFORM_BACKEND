@@ -19,6 +19,7 @@ export const convert3DTileRequestDTO = Type.Object({
   appearance: Type.String(),
   name: Type.String(),
   token: Type.String(),
+  hasAlphaEnabled: Type.Boolean(),
 });
 export type Convert3DTileRequestDTO = Static<typeof convertTerrainRequestDTO>;
 

@@ -35,5 +35,9 @@ model Configuration extends Base, AdminPrivilege {
     predeletionEmailDE              String
     predeletionEmailEN              String
 
+    systemActivityLink              String
+    userProfileLink                 String
+    unityDownloadLink               String
+
     @@allow('all', true)
 }

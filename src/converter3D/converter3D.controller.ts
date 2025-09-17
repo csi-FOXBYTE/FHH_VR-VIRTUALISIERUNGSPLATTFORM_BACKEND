@@ -94,7 +94,8 @@ converter3DController
       body.token,
       body.name,
       body.srcSRS,
-      body.appearance
+      body.appearance,
+      body.hasAlphaEnabled,
     );
   });
 
