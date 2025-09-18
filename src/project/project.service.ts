@@ -347,7 +347,7 @@ const projectService = createService(
           );
 
         // delete project models
-        await dbService.project.delete({ where: { id }});
+        await dbService.project.delete({ where: { id } });
 
         await blobStorageService.deleteContainer(`project-${id}`);
       },
@@ -405,6 +405,12 @@ const projectService = createService(
             })),
           });
         }
+
+        await dbService.startingPoint.deleteMany({
+          where: {
+            projectId: project.id,
+          },
+        });
 
         await dbService.startingPoint.createMany({
           data: project.startingPoints.map((s) => ({
