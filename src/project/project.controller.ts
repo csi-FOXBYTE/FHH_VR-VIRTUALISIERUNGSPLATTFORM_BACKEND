@@ -33,6 +33,40 @@ projectController
   });
 
 projectController
+  .addRoute("GET", "/list")
+  .output(
+    Type.Array(
+      Type.Object({
+        id: Type.String(),
+        name: Type.String(),
+        description: Type.String(),
+      })
+    )
+  )
+  .handler(async ({ services }) => {
+    const projectService = await getProjectService(services);
+
+    return await projectService.listProjects();
+  });
+
+projectController
+  .addRoute("GET", "/listShared")
+  .output(
+    Type.Array(
+      Type.Object({
+        id: Type.String(),
+        name: Type.String(),
+        description: Type.String(),
+      })
+    )
+  )
+  .handler(async ({ services }) => {
+    const projectService = await getProjectService(services);
+
+    return await projectService.listSharedProjects();
+  });
+
+projectController
   .addRoute("POST", "/:id")
   .body(projectDTO)
   .params(Type.Object({ id: Type.String() }))

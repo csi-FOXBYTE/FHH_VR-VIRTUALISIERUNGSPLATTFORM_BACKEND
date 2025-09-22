@@ -11,6 +11,7 @@ userController
     Type.Object({
       name: Type.String(),
       email: Type.String(),
+      image: Type.Union([Type.String(), Type.Null()]),
     })
   )
   .handler(async ({ services, ctx }) => {

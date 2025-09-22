@@ -4,6 +4,7 @@ import { ProjectDTO, UnityProjectDTO } from "./project.dto.js";
 import sharp from "sharp";
 import {
   getAuthService,
+  getBaseLayerService,
   getBlobStorageService,
   getConfigurationService,
   getDbService,
@@ -15,6 +16,7 @@ const projectService = createService(
     const dbService = await getDbService(services);
 
     const blobStorageService = await getBlobStorageService(services);
+    const baseLayerService = await getBaseLayerService(services);
     const configurationService = await getConfigurationService(services);
 
     const authService = await getAuthService(services);
@@ -29,23 +31,6 @@ const projectService = createService(
         `project-${id}`,
         permissions
       );
-
-      function createBaseLayerHref(baseLayer: {
-        type: string;
-        containerName: string;
-      }) {
-        const url = blobStorageService.getContainerReadSASUrl(
-          baseLayer.containerName
-        );
-
-        if (baseLayer.type === "TILES3D") {
-          const newUrl = new URL(url);
-
-          return `${newUrl.protocol}//${newUrl.host}${newUrl.pathname}/tileset.json${newUrl.search}`;
-        } else {
-          return url;
-        }
-      }
 
       const allAvailableBaseLayers = await dbService.baseLayer.findMany({
         select: {
@@ -240,7 +225,7 @@ const projectService = createService(
           ...baseLayer,
           href:
             baseLayer.containerName !== null
-              ? createBaseLayerHref({
+              ? baseLayerService.createBaseLayerHref({
                   containerName: baseLayer.containerName!,
                   type: baseLayer.type,
                 })
@@ -272,6 +257,71 @@ const projectService = createService(
     }
 
     return {
+      async listSharedProjects(): Promise<
+        { name: string; id: string; description: string }[]
+      > {
+        const session = await authService.getSession();
+
+        const projects = await dbService.project.findMany({
+          where: {
+            OR: [
+              {
+                visibleForGroups: {
+                  some: {
+                    assignedUsers: {
+                      some: {
+                        id: session?.user.id,
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                visibleForUsers: {
+                  some: {
+                    id: session?.user.id,
+                  },
+                },
+              },
+            ],
+          },
+          select: {
+            title: true,
+            description: true,
+            id: true,
+          },
+        });
+
+        return projects.map((project) => ({
+          name: project.title,
+          description: project.description,
+          id: project.id,
+        }));
+      },
+      async listProjects(): Promise<
+        { name: string; id: string; description: string }[]
+      > {
+        const session = await authService.getSession();
+
+        const projects = await dbService.project.findMany({
+          where: {
+            owner: {
+              id: session?.user.id,
+            },
+          },
+          select: {
+            title: true,
+            description: true,
+            id: true,
+          },
+        });
+
+        return projects.map((project) => ({
+          name: project.title,
+          description: project.description,
+          id: project.id,
+        }));
+      },
       async getUnityProject(id: string): Promise<UnityProjectDTO> {
         const project = await getProject(id);
 

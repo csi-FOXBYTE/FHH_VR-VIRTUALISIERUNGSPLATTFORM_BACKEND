@@ -336,4 +336,7 @@ model Configuration {
   invitationUpdatedEmailEN        String
   predeletionEmailDE              String
   predeletionEmailEN              String
+  systemActivityLink              String
+  userProfileLink                 String
+  unityDownloadLink               String
 }
