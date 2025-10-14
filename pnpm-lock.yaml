@@ -30,8 +30,8 @@ importers:
         specifier: ^0.1.1
         version: 0.1.1(bullmq@5.56.4)
       '@csi-foxbyte/mesh-dem-to-terrain':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.0.3
+        version: 0.0.3
       '@csi-foxbyte/prisma-mssql-realtime-extension':
         specifier: ^0.0.3
         version: 0.0.3(@prisma/client@6.8.2(prisma@6.8.2(typescript@5.8.3))(typescript@5.8.3))(rxjs-for-await@1.0.0(rxjs@7.8.2))(rxjs@7.8.2)
@@ -429,8 +429,8 @@ packages:
     peerDependencies:
       bullmq: ^5.0.0
 
-  '@csi-foxbyte/mesh-dem-to-terrain@0.0.2':
-    resolution: {integrity: sha512-6FyVRc8nfG3MLA9VAhi9mAi0/J2TXO/g/AbcQ2M1WnafKhHResOuTCgj8hii9M79TZV+TQV+x2uErC+jsDsmvQ==}
+  '@csi-foxbyte/mesh-dem-to-terrain@0.0.3':
+    resolution: {integrity: sha512-l0L1k+AaoRqV1zDCsvTnkt4x4TZlM/I8PGk6l2ZnXEbTEnGBt7IZfAdW8dqCM19612mOP31BCEZTFgATSNfBKQ==}
 
   '@csi-foxbyte/prisma-mssql-realtime-extension@0.0.3':
     resolution: {integrity: sha512-7nhsfW9/hCzfNBYeeKzSRpoLUBJxFnN05+F5j50IHj9H+xHfPqquvTB9UY83XQBMx3YshYpTQ6XVLPTlJ/YGBQ==}
@@ -5576,7 +5576,7 @@ snapshots:
       handlebars: 4.7.8
       tiny-glob: 0.2.9
 
-  '@csi-foxbyte/mesh-dem-to-terrain@0.0.2':
+  '@csi-foxbyte/mesh-dem-to-terrain@0.0.3':
     dependencies:
       '@gltf-transform/core': 4.2.0
       '@gltf-transform/functions': 4.2.0

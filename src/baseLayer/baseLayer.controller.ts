@@ -37,6 +37,21 @@ baseLayerController
   });
 
 baseLayerController
+  .addRoute("PATCH", "/")
+  .body(
+    Type.Object({
+      href: Type.Union([Type.String(), Type.Null()]),
+      visibleForGroups: Type.Array(Type.String()),
+      id: Type.String(),
+    })
+  )
+  .handler(async ({ body, services }) => {
+    const baseLayerService = await getBaseLayerService(services);
+
+    await baseLayerService.update(body.id, body.href, body.visibleForGroups);
+  });
+
+baseLayerController
   .addRoute("POST", "/listChanges")
   .body(
     Type.Object({

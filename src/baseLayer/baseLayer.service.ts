@@ -39,8 +39,9 @@ const baseLayerService = createService(
         });
 
         if (!baseLayer.containerName) return;
-
-        await blobStorageService.deleteContainer(baseLayer.containerName);
+        try {
+          await blobStorageService.deleteContainer(baseLayer.containerName);
+        } catch {}
       },
       createBaseLayerHref,
       async list() {
@@ -105,6 +106,27 @@ const baseLayerService = createService(
               connect: {
                 id: session.user.id,
               },
+            },
+          },
+        });
+      },
+      async update(
+        id: string,
+        href: string | null,
+        visibleForGroups: string[]
+      ) {
+        const session = await authService.getSession();
+
+        if (!session) throw new Error("User has no session!");
+
+        await dbService.baseLayer.update({
+          where: {
+            id,
+          },
+          data: {
+            href,
+            visibleForGroups: {
+              set: visibleForGroups.map((v) => ({ id: v })),
             },
           },
         });

@@ -155,7 +155,7 @@ const blobStorageService = createService(
           "1d"
         );
 
-        await deleteLater(containerName, blobName, 24 * 60 * 60 * 1000); // Delete after 1 day
+        await deleteLater(containerName, blobName, 7 * 24 * 60 * 60 * 1000); // Delete after 7 days
 
         return token;
       },

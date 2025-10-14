@@ -32,9 +32,11 @@ const authService = createService(
             name: true,
             assignedGroups: {
               select: {
+                isAdminGroup: true,
                 assignedRoles: {
                   select: {
                     assignedPermissions: true,
+                    isAdminRole: true,
                   },
                 },
               },

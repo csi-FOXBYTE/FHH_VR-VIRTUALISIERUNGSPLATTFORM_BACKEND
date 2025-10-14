@@ -97,6 +97,7 @@ const userService = createService(
           select: {
             name: true,
             email: true,
+            image: true,
           },
         });
 

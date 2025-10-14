@@ -15,7 +15,6 @@ const notificationService = createService(
     const emailService = await getEmailService(services);
 
     async function notify(notifications: Notification[]) {
-      console.log(notifications);
       for (const notification of notifications) {
         await emailService.sendMail({
           to: notification.to,
