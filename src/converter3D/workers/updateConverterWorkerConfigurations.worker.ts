@@ -10,7 +10,7 @@ const updateConverterWorkerConfigurationsWorker = createWorker()
   .queue("{converter3D-updateConverterWorkerConfigurations-queue}")
   .job<Job<void, void>>()
   .upsertJobScheduler("updateConverterWorkerConfigurationsScheduler", {
-    every: 5 * 60 * 1000, // every 5 minutes
+    every: 60 * 60 * 1000, // every 5 minutes
   })
   .options({ telemetry: new BullMQOtel("bullmq") })
   .connection(defaultConnection)
