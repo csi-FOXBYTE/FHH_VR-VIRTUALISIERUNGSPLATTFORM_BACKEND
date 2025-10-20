@@ -36,9 +36,9 @@ const projectService = createService(
         where: {
           status: {
             not: {
-              in: ["PENDING", "FAILED"]
-            }
-          }
+              in: ["PENDING", "FAILED"],
+            },
+          },
         },
         select: {
           id: true,
@@ -332,12 +332,20 @@ const projectService = createService(
       async getUnityProject(id: string): Promise<UnityProjectDTO> {
         const project = await getProject(id);
 
+        const permissions = new BlobSASPermissions();
+        permissions.read = true;
+
+        const sasQueryParameters = blobStorageService.getContainerSASToken(
+          `project-${id}`,
+          permissions
+        );
+
         const config = await configurationService.getConfiguration();
 
         return {
           description: project.description,
           id: project.id,
-          myRole: "MODERATOR",
+          projectSasQueryParameters: sasQueryParameters.toString(),
           maximumFlyingHeight: config.maximumFlyingHeight,
           name: project.title,
           startingPoints: project.startingPoints.map((s) => ({

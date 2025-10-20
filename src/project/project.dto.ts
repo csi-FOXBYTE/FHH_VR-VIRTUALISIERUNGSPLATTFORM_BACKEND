@@ -117,7 +117,7 @@ export const projectDTO = Type.Object({
 export const unityProjectDTO = Type.Object({
   name: Type.String(),
   id: Type.String(),
-  myRole: Type.Union([Type.Literal("MODERATOR"), Type.Literal("GUEST")]),
+  projectSasQueryParameters: Type.String(),
   description: Type.String(),
   maximumFlyingHeight: Type.Number(),
   startingPoints: Type.Array(
