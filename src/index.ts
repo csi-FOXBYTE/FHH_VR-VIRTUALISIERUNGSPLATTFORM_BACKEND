@@ -1,20 +1,20 @@
-import "./bootstrap-otel.js"; // this must be at first position!
-import "dotenv/config";
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { FastifyAdapter } from '@bull-board/fastify';
 import fastifyToab from "@csi-foxbyte/fastify-toab";
 import fastifyCors from "@fastify/cors";
 import fastifyHelmet from "@fastify/helmet";
 import fastifyMultipart from "@fastify/multipart";
+import { FastifyOtelInstrumentation } from "@fastify/otel";
+import fastifyRateLimit from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import fastifyUnderPressure from "@fastify/under-pressure";
+import "dotenv/config";
 import Fastify from "fastify";
 import json from "../package.json" with { type: "json" };
+import "./bootstrap-otel.js"; // this must be at first position!
 import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
-import { createBullBoard } from '@bull-board/api';
-import {BullMQAdapter} from "@bull-board/api/bullMQAdapter";
-import { FastifyAdapter } from '@bull-board/fastify';
-import fastifyRateLimit from "@fastify/rate-limit"
-import {FastifyOtelInstrumentation} from "@fastify/otel";
 
 injectPinoLogger();
 
@@ -103,7 +103,7 @@ fastify.register(fastifySwaggerUi, {
   transformSpecificationClone: true,
 });
 
-const {getRegistries} = await import("./registries.js");
+const { getRegistries } = await import("./registries.js");
 
 const registries = await getRegistries(process.env.WORKER_DISABLED === "true");
 
@@ -133,7 +133,7 @@ fastify.route({
 
     serverAdapter.setBasePath("/bullMQ")
 
-    fastify.register(serverAdapter.registerPlugin(), { prefix: "/bullMQ"});
+    fastify.register(serverAdapter.registerPlugin(), { prefix: "/bullMQ" });
 
     await fastify.ready();
 

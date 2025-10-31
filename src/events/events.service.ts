@@ -1,5 +1,7 @@
 import { createService } from "@csi-foxbyte/fastify-toab";
 import dayjs from "dayjs";
+import Handlebars from "handlebars";
+import ics from "ics";
 import {
   getAuthService,
   getConfigurationService,
@@ -8,8 +10,6 @@ import {
   getPrismaService,
   getTranslationService,
 } from "../@internals/index.js";
-import ics from "ics";
-import Handlebars from "handlebars";
 
 const eventsService = createService(
   "events",
@@ -167,11 +167,19 @@ const eventsService = createService(
               (user.language ?? "en").toLowerCase() as "en"
             );
 
+            let url: string | undefined = undefined;
+
+            try {
+              new URL(config.emailPlatformAddress);
+
+              url = config.emailPlatformAddress;
+            } catch { };
+
             const event = ics.createEvent({
               start: startTime,
               end: endTime,
               title: title,
-              url: config.emailPlatformAddress,
+              url,
               htmlContent: html,
               organizer: {
                 email: createdEvent.owner?.email,
@@ -423,28 +431,28 @@ const eventsService = createService(
               project === undefined
                 ? undefined
                 : project === null
-                ? { disconnect: {} }
-                : { connect: { id: project } },
+                  ? { disconnect: {} }
+                  : { connect: { id: project } },
             attendees: attendees
               ? {
-                  deleteMany: {
-                    NOT: { userId: { in: cleanedAttendees } },
+                deleteMany: {
+                  NOT: { userId: { in: cleanedAttendees } },
+                },
+                upsert: cleanedAttendees.map((userId) => ({
+                  where: { eventId_userId: { eventId: id, userId } },
+                  create: {
+                    userId,
+                    role: (moderators ?? []).includes(userId)
+                      ? "MODERATOR"
+                      : "GUEST",
                   },
-                  upsert: cleanedAttendees.map((userId) => ({
-                    where: { eventId_userId: { eventId: id, userId } },
-                    create: {
-                      userId,
-                      role: (moderators ?? []).includes(userId)
-                        ? "MODERATOR"
-                        : "GUEST",
-                    },
-                    update: {
-                      role: (moderators ?? []).includes(userId)
-                        ? "MODERATOR"
-                        : "GUEST",
-                    },
-                  })),
-                }
+                  update: {
+                    role: (moderators ?? []).includes(userId)
+                      ? "MODERATOR"
+                      : "GUEST",
+                  },
+                })),
+              }
               : undefined,
           },
         });

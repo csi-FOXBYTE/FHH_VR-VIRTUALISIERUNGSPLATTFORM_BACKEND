@@ -112,12 +112,18 @@ const converter3DService = createService(
             type: "TERRAIN",
             status: "PENDING",
             progress: 0,
-            containerName: containerName,
             ownerId: (await authService.getSession())!.user.id,
           },
           select: {
             id: true,
           },
+        });
+
+        await prismaService.baseLayer.update({
+          where: { id },
+          data: {
+            containerName: `terrain-${id}`
+          }
         });
 
         const job = await terrainConverterQueue.add(id, {
@@ -167,12 +173,21 @@ const converter3DService = createService(
             type: "TILES3D",
             status: "PENDING",
             progress: 0,
-            containerName: containerName,
+            containerName: null,
             ownerId: (await authService.getSession())!.user.id,
           },
           select: {
             id: true,
           },
+        });
+
+        await prismaService.baseLayer.update({
+          where: {
+            id,
+          },
+          data: {
+            containerName: `tileset-${id}`
+          }
         });
 
         const job = await tile3DConverterQueue.add(id, {

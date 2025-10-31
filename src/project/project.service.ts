@@ -1,7 +1,5 @@
-import { createService, GenericRouteError } from "@csi-foxbyte/fastify-toab";
 import { BlobSASPermissions } from "@azure/storage-blob";
-import { ProjectDTO, UnityProjectDTO } from "./project.dto.js";
-import sharp from "sharp";
+import { createService, GenericRouteError } from "@csi-foxbyte/fastify-toab";
 import {
   getAuthService,
   getBaseLayerService,
@@ -9,6 +7,7 @@ import {
   getConfigurationService,
   getDbService,
 } from "../@internals/index.js";
+import { ProjectDTO, UnityProjectDTO } from "./project.dto.js";
 
 const projectService = createService(
   "project",
@@ -565,38 +564,13 @@ const projectService = createService(
           })),
         });
 
-        let img: string | null = null;
-
-        if (project.img) {
-          const [, base64] = project.img.split(",");
-          const imgRaw = sharp(Buffer.from(base64, "base64"));
-
-          let { width } = await imgRaw.metadata();
-
-          width = Math.min(width, 800);
-
-          const height = Math.round((width / 16) * 9);
-
-          const buffer = await imgRaw
-            .resize({
-              width,
-              height,
-              fit: "cover",
-              position: "centre",
-            })
-            .toFormat("jpeg")
-            .toBuffer();
-
-          img = `data:image/jpeg;base64,${buffer.toString("base64")}`;
-        }
-
         await dbService.project.update({
           where: {
             id: project.id,
           },
           data: {
             title: project.title,
-            img: img,
+            img: project.img,
             camera: project.camera ? JSON.parse(project.camera) : null,
             description: project.description,
           },
