@@ -10,7 +10,7 @@
     "lint": "oxlint && eslint",
     "dev": "tsx dev.ts",
     "build": "tsx build.ts",
-    "publish:docker": "docker build -t fhhvr-webbackend:0.2.1 . --secret id=npmrc,src=%USERPROFILE%/.npmrc --secret id=env,src=.env && docker tag fhhvr-webbackend:0.2.1 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.2.1 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.2.1"
+    "publish:docker": "docker build -t fhhvr-webbackend:0.2.1 . && docker tag fhhvr-webbackend:0.2.1 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.2.1 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.2.1"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

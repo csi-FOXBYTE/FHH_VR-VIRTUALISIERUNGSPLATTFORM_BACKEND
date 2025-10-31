@@ -45,12 +45,10 @@ USER nodeuser
 
 # Install all dependencies and run build scripts.
 # Postinstall hooks will run here correctly because all files are present.
-RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
-    --mount=type=secret,id=env,target=.env \
-    pnpm install --frozen-lockfile --loglevel verbose 
+RUN --mount=type=secret,id=env,target=.env \
+    pnpm install --frozen-lockfile --loglevel verbose
 
-RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
-    --mount=type=secret,id=env,target=.env \
+RUN --mount=type=secret,id=env,target=.env \
     pnpm zenstack-generate && pnpm run build
 
 #-------------------------------------------------------------------------------
@@ -80,8 +78,8 @@ ENV PORT=3000
 WORKDIR /app
 
 # Create the non-root user again
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodeuser
+RUN addgroup --system --gid 999 nodejs
+RUN adduser --system --uid 999 nodeuser
 RUN chown nodeuser:nodejs /app
 
 USER nodeuser
