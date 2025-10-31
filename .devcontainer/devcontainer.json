@@ -1,0 +1,51 @@
+{
+  "name": "mubea-trs-backend",
+  "dockerComposeFile": [
+    "docker-compose.yml"
+  ],
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "postCreateCommand": {
+    "configure-docker": "chown $(whoami) /var/run/docker.sock"
+  },
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "overrideCommand": false,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "editorconfig.editorconfig",
+        "openai.chatgpt",
+        "prisma.prisma",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.vscode-typescript-next",
+        "lokalise.i18n-ally",
+        "knisterpeter.vscode-commitizen"
+      ],
+      "settings": {
+        // ---- Global editor hygiene ----
+        "files.eol": "\n",
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "always"
+        },
+        // i18n settings
+        "i18n-ally.localesPaths": [
+          "src/locales"
+        ],
+        "i18n-ally.keystyle": "nested",
+        "i18n-ally.sourceLanguage": "de",
+        "i18n-ally.extract.autoDetect": true,
+        // ---- UX niceties ----
+        "problems.showCurrentInStatus": true
+      }
+    }
+  }
+}
