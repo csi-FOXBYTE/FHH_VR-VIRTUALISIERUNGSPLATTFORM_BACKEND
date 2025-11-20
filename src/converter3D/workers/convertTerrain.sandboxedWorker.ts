@@ -89,7 +89,6 @@ export default async function run(
     }
 
     try {
-      return;
       await blobStorageService.delete(
         job.data.containerName,
         job.data.blobName
@@ -101,7 +100,6 @@ export default async function run(
   } catch (e) {
     job.log(e);
     try {
-      return;
       await blobStorageService.delete(
         job.data.containerName,
         job.data.blobName

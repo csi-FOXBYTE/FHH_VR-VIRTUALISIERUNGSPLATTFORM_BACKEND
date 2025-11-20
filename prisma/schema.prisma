@@ -348,10 +348,12 @@ model Configuration {
   uiGlobalStartPointY             String
   uiGlobalStartPointZ             String
   uiGlobalStartPointEpsg          String
-  maxParallelFileConversions      Float
-  maxParallelBaseLayerConversions Float
+  maxParallelFileConversions      Float    @default(1)
+  maxParallelBaseLayerConversions Float    @default(1)
+  used3DTileConversionThreads     Float    @default(2)
+  usedTerrainConversionThreads    Float    @default(2)
   invitationEmailText             String   @db.Text()
-  localProcessorFolder            String
+  localProcessorFolder            String   @default("./processor")
   emailUser                       String
   emailPassword                   String
   emailHost                       String

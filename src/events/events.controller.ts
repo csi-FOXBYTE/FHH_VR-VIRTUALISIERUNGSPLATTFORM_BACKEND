@@ -23,6 +23,7 @@ eventsController
         status: Type.String({ description: `Can be one of ${Object.keys($Enums.EVENT_STATUS).join(", ")}.` }),
         endTime: Type.String(),
         startTime: Type.String(),
+        projectId: Type.Union([Type.String(), Type.Null()]),
         title: Type.String(),
         owner: Type.Object({
           name: Type.String(),

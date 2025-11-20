@@ -129,7 +129,7 @@ const converter3DService = createService(
         const job = await terrainConverterQueue.add(id, {
           blobName,
           id,
-          threadCount: 4,
+          threadCount: (await configurationService.getConfiguration()).usedTerrainConversionThreads,
           srcSRS,
           containerName,
           localProcessorFolder: (
@@ -193,7 +193,7 @@ const converter3DService = createService(
         const job = await tile3DConverterQueue.add(id, {
           blobName,
           srcSRS,
-          threadCount: 4,
+          threadCount: (await configurationService.getConfiguration()).used3DTileConversionThreads,
           id,
           hasAlphaEnabled,
           appearance,

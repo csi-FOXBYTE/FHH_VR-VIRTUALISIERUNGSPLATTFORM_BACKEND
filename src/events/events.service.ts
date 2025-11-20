@@ -561,12 +561,18 @@ const eventsService = createService(
 
       async list() {
         return await dbService.event.findMany({
+          where: {
+            endTime: {
+              gte: new Date().toISOString(),
+            }
+          },
           select: {
             id: true,
             startTime: true,
             endTime: true,
             title: true,
             status: true,
+            projectId: true,
             owner: {
               select: {
                 name: true,
