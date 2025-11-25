@@ -21,7 +21,7 @@ import dayjs from "dayjs";
 injectPinoLogger();
 
 function printLogWithDate(log: string) {
-  return `${dayjs().format("HH:mm DD.MM.YYYY")}: ${log}`;
+  return `${dayjs().format("HH:mm:ss DD.MM.YYYY")}: ${log}`;
 }
 
 export default async function run(
@@ -68,6 +68,11 @@ export default async function run(
 
     job.log(printLogWithDate("Unpacked files."));
 
+    try {
+      await rm(zipPath, { force: true });
+      job.log(printLogWithDate("Removed zip file."));
+    } catch {}
+
     await throttledProgress(0.1 * 100);
 
     // preprocess with citygml tools
@@ -88,6 +93,11 @@ export default async function run(
       { threadCount: job.data.threadCount, srcSRS: job.data.srcSRS }
     );
     job.log(printLogWithDate("Generated tile database."));
+
+    try {
+      await rm(unpackedPath, { force: true, recursive: true });
+      job.log(printLogWithDate("Removed unpacked files."));
+    } catch {}
 
     const tilesPath = path.join(rootPath, "tiles");
 

@@ -1,6 +1,6 @@
 {
   "name": "WebBackend",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "",
   "main": ".dist/index.js",
   "type": "module",
@@ -10,7 +10,7 @@
     "lint": "oxlint && eslint",
     "dev": "tsx dev.ts",
     "build": "tsx build.ts",
-    "publish:docker": "docker build -t fhhvr-webbackend:0.2.6 . && docker tag fhhvr-webbackend:0.2.6 foxbytecsi/fhhvr-webbackend:0.2.6 && docker push foxbytecsi/fhhvr-webbackend:0.2.6"
+    "publish:docker": "docker build -t fhhvr-webbackend:0.2.7 . && docker tag fhhvr-webbackend:0.2.7 foxbytecsi/fhhvr-webbackend:0.2.7 && docker push foxbytecsi/fhhvr-webbackend:0.2.7"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -28,7 +28,7 @@
     "@azure/storage-blob": "^12.27.0",
     "@bull-board/api": "^6.11.0",
     "@bull-board/fastify": "^6.11.0",
-    "@csi-foxbyte/cityjson-to-3d-tiles": "^0.0.15",
+    "@csi-foxbyte/cityjson-to-3d-tiles": "^0.0.16",
     "@csi-foxbyte/fastify-toab": "^0.1.3",
     "@csi-foxbyte/mesh-dem-to-terrain": "^0.0.4",
     "@fastify/cors": "^11.0.1",

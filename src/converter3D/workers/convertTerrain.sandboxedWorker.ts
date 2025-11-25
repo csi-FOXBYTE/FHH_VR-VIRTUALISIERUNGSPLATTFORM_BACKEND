@@ -5,7 +5,10 @@ import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { injectPinoLogger } from "../../lib/pino.js";
 import { initializeContainers } from "../../registries.js";
-import { Converter3DConvertTerrainWorkerJob, getBlobStorageService } from "../../@internals/index.js";
+import {
+  Converter3DConvertTerrainWorkerJob,
+  getBlobStorageService,
+} from "../../@internals/index.js";
 
 injectPinoLogger();
 
@@ -52,6 +55,11 @@ export default async function run(
     job.log("Preprocessed.");
 
     try {
+      await rm(zipPath, { force: true, recursive: true });
+      job.log("Removed zip file.");
+    } catch {}
+
+    try {
       job.log("Generating...");
       await generate(
         preprocessedDir,
@@ -94,7 +102,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch { }
+    } catch {}
     job.log("Finished.");
     job.updateProgress(100);
   } catch (e) {
@@ -105,7 +113,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch { }
+    } catch {}
     throw e;
   }
 }
