@@ -5,7 +5,7 @@ import {
 } from "@csi-foxbyte/cityjson-to-3d-tiles";
 import "dotenv";
 import { createReadStream } from "fs";
-import { mkdir, rm } from "fs/promises";
+import { mkdir, readFile, rm } from "fs/promises";
 import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
@@ -17,6 +17,7 @@ import {
   type Converter3DConvert3DTilesWorkerJob,
 } from "../../@internals/index.js";
 import dayjs from "dayjs";
+import { queue } from "async";
 
 injectPinoLogger();
 
@@ -101,20 +102,37 @@ export default async function run(
 
     const tilesPath = path.join(rootPath, "tiles");
 
+    const uploadQueue = queue<string, Error>(async (filePath: string) => {
+      const buffer = await readFile(filePath);
+
+      await blobStorageService.uploadData(
+        buffer,
+        `tileset-${job.data.id}`,
+        path.basename(filePath)
+      );
+
+      await rm(filePath);
+    });
+
     // generate 3d tiles from tile db
     job.log(printLogWithDate("Generating 3d tiles from database..."));
     await generate3DTilesFromTileDatabase(
       dbFilePath,
       tilesPath,
       job.data.hasAlphaEnabled,
-      async (progress) => {
+      async (progress, files) => {
         await throttledProgress((0.45 + progress * 0.3) * 100);
+        for (const file of files) {
+          uploadQueue.push(file);
+        }
       },
       {
         threadCount: job.data.threadCount,
       }
     );
     job.log(printLogWithDate("Generated 3d tiles from database."));
+
+    if (uploadQueue.length() !== 0) await uploadQueue.drain();
 
     const files = await glob("./*", {
       filesOnly: true,

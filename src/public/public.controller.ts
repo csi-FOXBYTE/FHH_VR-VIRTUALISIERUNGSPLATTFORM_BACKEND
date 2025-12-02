@@ -2,21 +2,65 @@ import { createController } from "@csi-foxbyte/fastify-toab";
 import { Type } from "@sinclair/typebox";
 import {
   getBlobStorageService,
-  getConverter3DService,
+  getDbService,
   getPrismaService,
 } from "../@internals/index.js";
 
 const publicController = createController().rootPath("/public");
 
 publicController
-  .addRoute("GET", "/obliterate3DTiles")
-  .output(Type.String())
+  .addRoute("GET", "/visualAxes")
+  .output(
+    Type.Array(
+      Type.Object({
+        name: Type.String(),
+        id: Type.String(),
+        description: Type.String(),
+        startPoint: Type.Object({
+          x: Type.Number(),
+          y: Type.Number(),
+          z: Type.Number(),
+        }),
+        endPoint: Type.Object({
+          x: Type.Number(),
+          y: Type.Number(),
+          z: Type.Number(),
+        }),
+      })
+    )
+  )
   .handler(async ({ services }) => {
-    const s = await getConverter3DService(services);
+    const dbService = await getDbService(services);
 
-    await s.obliterate3DTilesQueue(); // TODO ONLY FOR DEBUGGING REMOVE THIS!!!!
+    const result = await dbService.visualAxis.findMany({
+      select: {
+        startPointX: true,
+        startPointY: true,
+        startPointZ: true,
+        endPointX: true,
+        endPointY: true,
+        endPointZ: true,
+        id: true,
+        name: true,
+        description: true,
+      },
+    });
 
-    return "Obliterated";
+    return result.map((r) => ({
+      description: r.description,
+      name: r.name,
+      id: r.id,
+      startPoint: {
+        x: r.startPointX,
+        y: r.startPointY,
+        z: r.startPointZ,
+      },
+      endPoint: {
+        x: r.endPointX,
+        y: r.endPointY,
+        z: r.endPointZ,
+      },
+    }));
   });
 
 publicController
