@@ -15,12 +15,12 @@ publicController
         name: Type.String(),
         id: Type.String(),
         description: Type.String(),
-        startPoint: Type.Object({
+        origin: Type.Object({
           x: Type.Number(),
           y: Type.Number(),
           z: Type.Number(),
         }),
-        endPoint: Type.Object({
+        target: Type.Object({
           x: Type.Number(),
           y: Type.Number(),
           z: Type.Number(),
@@ -49,12 +49,12 @@ publicController
       description: r.description,
       name: r.name,
       id: r.id,
-      startPoint: {
+      origin: {
         x: r.startPointX,
         y: r.startPointY,
         z: r.startPointZ,
       },
-      endPoint: {
+      target: {
         x: r.endPointX,
         y: r.endPointY,
         z: r.endPointZ,
